@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560" viewBox="0 0 1600 560" role="img" aria-labelledby="title description">
+  <title id="title">Pixora — 找到。確認。歸位。</title>
+  <desc id="description">深藍與冰藍品牌插畫。散落的圖片卡片經過確認，收進資料夾；代表本機搜尋、人工審核與檔案整理，並非產品介面截圖。</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0b111f"/>
+      <stop offset="1" stop-color="#15283e"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#263e5d"/>
+      <stop offset="1" stop-color="#17273e"/>
+    </linearGradient>
+    <linearGradient id="folder" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#a8e6ff"/>
+      <stop offset="1" stop-color="#78a8df"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#a8e6ff" stroke-opacity=".055"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="170%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#020711" flood-opacity=".45"/>
+    </filter>
+    <clipPath id="bounds"><rect width="1600" height="560" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#bounds)">
+    <rect width="1600" height="560" fill="url(#background)"/>
+    <rect x="830" width="770" height="560" fill="url(#grid)"/>
+    <circle cx="1260" cy="280" r="222" fill="none" stroke="#a8e6ff" stroke-opacity=".09"/>
+    <circle cx="1260" cy="280" r="278" fill="none" stroke="#a8e6ff" stroke-opacity=".05"/>
+    <path d="M78 86H120" stroke="#a8e6ff" stroke-width="3"/>
+    <g font-family="Segoe UI, Microsoft JhengHei, sans-serif">
+      <text x="138" y="94" fill="#a8e6ff" font-size="22" font-weight="600" letter-spacing="3">YOUR IMAGES. YOUR CONTROL.</text>
+      <text x="72" y="236" fill="#f0f6fc" font-size="78" font-weight="700" letter-spacing="1">找到。確認。<tspan fill="#a8e6ff">歸位。</tspan></text>
+      <text x="78" y="300" fill="#b9cada" font-size="30" letter-spacing="1">圖庫留在本機，整理由你決定。</text>
+      <g transform="translate(78 374)">
+        <rect width="200" height="64" rx="12" fill="#152236" stroke="#324962"/>
+        <circle cx="31" cy="29" r="10" fill="none" stroke="#a8e6ff" stroke-width="2.5"/>
+        <path d="m39 37 7 7" stroke="#a8e6ff" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="63" y="41" fill="#e4edf6" font-size="25">本機搜尋</text>
+      </g>
+      <g transform="translate(296 374)">
+        <rect width="200" height="64" rx="12" fill="#152236" stroke="#324962"/>
+        <rect x="22" y="19" width="25" height="27" rx="5" fill="none" stroke="#a8e6ff" stroke-width="2.5"/>
+        <path d="m28 32 5 5 9-10" fill="none" stroke="#a8e6ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="63" y="41" fill="#e4edf6" font-size="25">人工審核</text>
+      </g>
+      <g transform="translate(514 374)">
+        <rect width="200" height="64" rx="12" fill="#152236" stroke="#324962"/>
+        <path d="M22 25v-5h10l5 5h10v20H22Z" fill="none" stroke="#a8e6ff" stroke-width="2.5" stroke-linejoin="round"/>
+        <text x="63" y="41" fill="#e4edf6" font-size="25">檔案整理</text>
+      </g>
+      <text x="78" y="506" fill="#7e98b3" font-size="18" font-weight="600" letter-spacing="4">PIXORA / LOCAL AI WORKSPACE</text>
+    </g>
+    <g filter="url(#shadow)">
+      <g transform="translate(930 176) rotate(-14 98 122)">
+        <rect width="196" height="244" rx="18" fill="url(#card)" stroke="#607c9b" stroke-width="2"/>
+        <rect x="16" y="16" width="164" height="174" rx="10" fill="#122036"/>
+        <circle cx="134" cy="57" r="16" fill="#a8e6ff" fill-opacity=".8"/>
+        <path d="m17 160 49-57 45 48 29-29 39 40v28H17Z" fill="#3b6088"/>
+        <path d="m17 177 53-36 42 31 32-20 35 30v8H17Z" fill="#6c93b9"/>
+        <path d="M22 212h86m-86 12h52" stroke="#abc6df" stroke-opacity=".65" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(1136 106) rotate(9 119 130)">
+        <rect width="238" height="276" rx="20" fill="url(#card)" stroke="#7e9ebd" stroke-width="2"/>
+        <rect x="18" y="18" width="202" height="195" rx="12" fill="#14253b"/>
+        <circle cx="160" cy="72" r="29" fill="#779eca"/>
+        <path d="M18 178 83 92l60 85 39-47 38 61v22H18Z" fill="#41658e"/>
+        <path d="m18 198 68-50 68 57 34-25 32 24v9H18Z" fill="#a2c6e3"/>
+        <path d="M28 239h107m-107 14h67" stroke="#bdd6eb" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <path d="M1163 300q0-17 17-17h69l29 28h184q18 0 18 18v127q0 24-24 24h-269q-24 0-24-24Z" fill="#527dab" stroke="#a7cced" stroke-width="2"/>
+      <path d="M1155 343q-3-20 17-20h287q21 0 18 20l-19 119q-3 20-23 20h-238q-20 0-23-20Z" fill="url(#folder)"/>
+      <rect x="1211" y="364" width="78" height="8" rx="4" fill="#173854" fill-opacity=".42"/>
+      <rect x="1211" y="382" width="49" height="6" rx="3" fill="#173854" fill-opacity=".24"/>
+      <circle cx="1458" cy="324" r="38" fill="#0b1727" stroke="#a8e6ff" stroke-width="2"/>
+      <path d="m1442 324 11 11 22-24" fill="none" stroke="#a8e6ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <path d="M939 462q64 31 137 6" fill="none" stroke="#a8e6ff" stroke-opacity=".55" stroke-width="2" stroke-dasharray="5 8"/>
+    <path d="m1067 461 12 6-8 10" fill="none" stroke="#a8e6ff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1" y="1" width="1598" height="558" rx="27" fill="none" stroke="#3c536c" stroke-opacity=".5" stroke-width="2"/>
+  </g>
+</svg>
