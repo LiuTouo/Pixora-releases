@@ -1,0 +1,31 @@
+{
+  "count": 1000000,
+  "dimensions": 512,
+  "distribution": "1024 deterministic centers plus independent uniform noise amplitude 0.12; L2 normalized; held-out queries",
+  "threads": 4,
+  "quantization": "f32",
+  "connectivity": 32,
+  "expansion_add": 128,
+  "expansion_search": 256,
+  "queries": 200,
+  "query_p50_ms": 3.6742,
+  "query_p95_ms": 4.5709,
+  "recall_at_50": 0.9814999999999996,
+  "build_seconds": 57.4688263,
+  "scope": "synthetic clustered f32 vectors; ANN + SQLite ID lookup; excludes CLIP query encoder and WebView",
+  "usearch": "2.26.2; default-features=false",
+  "full_application_targets_verified": false,
+  "measurement_date": "2026-09-17",
+  "environment": {
+    "os": "Windows 11 x64",
+    "cpu": "AMD Ryzen 7 9800X3D",
+    "ram_gib_approximately": 32,
+    "gpu_used": false
+  },
+  "notes": [
+    "Historical core benchmark, not a benchmark of the current complete application.",
+    "Synthetic clustered vectors do not represent real image retrieval quality.",
+    "Recall@50 is ANN recall against exact vector search, not image classification accuracy.",
+    "Original record copied with local artifact paths omitted; numerical results unchanged."
+  ]
+}

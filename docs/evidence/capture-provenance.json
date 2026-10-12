@@ -1,0 +1,60 @@
+{
+  "app_version": "0.3.7",
+  "source_tag": "v0.3.7",
+  "build": "Isolated debug build of the exact published source tag with embedded production frontend; CDP enabled for screenshots.",
+  "sample_count": 8,
+  "distinct_visuals": 4,
+  "real_clip_cpu_inference": true,
+  "semantic_query": "a photograph of a cat",
+  "smart_confirmed": 8,
+  "actual_files_moved_and_restored": 2,
+  "screenshots": [
+    "completed.png",
+    "library.png",
+    "preview.png",
+    "review.png",
+    "scope.png",
+    "search.png",
+    "setup.png",
+    "undo.png"
+  ],
+  "errors": [],
+  "published_files": [
+    "completed.webp",
+    "library.webp",
+    "preview.webp",
+    "review.webp",
+    "scope.webp",
+    "search.webp",
+    "setup.webp",
+    "undo.webp"
+  ],
+  "processing": "PNG screenshots converted to WebP for delivery; no product UI, results or paths altered.",
+  "sample_sources": [
+    {
+      "file": "cat.png",
+      "author": "Stefan van der Walt",
+      "source": "scikit-image Chelsea sample",
+      "license": "CC0"
+    },
+    {
+      "file": "coffee.png",
+      "author": "Rachel Michetti",
+      "source": "scikit-image coffee sample",
+      "license": "CC0"
+    },
+    {
+      "file": "horse.png",
+      "author": "Andreas Preuss",
+      "source": "Openclipart via scikit-image",
+      "license": "CC0"
+    },
+    {
+      "file": "astronaut.png",
+      "author": "NASA",
+      "source": "Eileen Collins photograph via scikit-image",
+      "license": "Public domain"
+    }
+  ],
+  "source_reference": "https://scikit-image.org/docs/stable/api/skimage.data.html"
+}
