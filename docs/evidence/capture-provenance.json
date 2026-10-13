@@ -49,7 +49,7 @@
     "source": "Previously verified same-tag real semantic-search PNG from the first isolated 12-image capture, reused without alteration.",
     "sha256": "debfb3837a27e75a511018149c84a8dcaa460bb68bda46500b926e0b6b96ef99"
   },
-  "processing": "Real PNG screenshots converted to WebP. Setup and scope are cropped to their real content panels to remove empty margins; no UI elements are replaced. Completed/undo images are genuine frames from the continuous recording (approximately 46s/52s). No DOM mock, invoke-response replacement, UI fabrication or image-result substitution.",
+  "processing": "Real PNG screenshots converted to WebP. Setup and scope are cropped to their real content panels to remove empty margins; no UI elements are replaced. Completed/undo images are genuine frames from the continuous recording (approximately 46s/52s). No DOM mock, invoke-response replacement, UI fabrication or image-result substitution. Site entrance and interactive re-enactment thumbnails (assets/demo/*.webp) are Lanczos resizes of the same pinned sample_sources originals to at most 480px WebP, hashed below; the originals and all capture media above are unchanged.",
   "scope": "Small operation demonstration only; not an accuracy benchmark or million-real-image end-to-end acceptance.",
   "sample_sources": [
     {
@@ -216,6 +216,66 @@
       "file": "demo.zh-TW.vtt",
       "sha256": "a10104ce3fc3ae7b2a579ab516c4221c673c5f2c935e8cc2f8390a62a2d0953b",
       "bytes": 811
+    },
+    {
+      "file": "demo/astronaut.webp",
+      "sha256": "4bc8be456f62dc7fa0b5b47313b0ae8fed682b540242298249329599cf98e48d",
+      "bytes": 30644
+    },
+    {
+      "file": "demo/brick.webp",
+      "sha256": "c68c3163d1237bb7c93a723ebe151e7ceb4882def364cf0da7e7bd00d15460e6",
+      "bytes": 13834
+    },
+    {
+      "file": "demo/camera.webp",
+      "sha256": "2e6bc7e75b9e7c8d1a34bea134e26c35f43aeefe3638ed09b128d76e1541283f",
+      "bytes": 27826
+    },
+    {
+      "file": "demo/chelsea.webp",
+      "sha256": "006f925747e25de0f21f44b7a21944535eebb3a95b6a803821f562ee3df1cb30",
+      "bytes": 19404
+    },
+    {
+      "file": "demo/clock_motion.webp",
+      "sha256": "3b5547570b5d06fbf9221eea98e45d755a9912d5a32060eff868a710cc0bd4e9",
+      "bytes": 1726
+    },
+    {
+      "file": "demo/coffee.webp",
+      "sha256": "b2a739114f06017ed94eda372867ce49a1e2b5f76a3ef6f6336cbbaa8699cd6a",
+      "bytes": 27768
+    },
+    {
+      "file": "demo/eagle.webp",
+      "sha256": "6a08bc44399f999e9ac3258d78b501a51c331c738dee2d1d090a07124517cfff",
+      "bytes": 31714
+    },
+    {
+      "file": "demo/grass.webp",
+      "sha256": "e86041d9d60bd61e0f8eb6421a7cc9365254c660db2973b200b451823bc83e22",
+      "bytes": 84338
+    },
+    {
+      "file": "demo/gravel.webp",
+      "sha256": "6a7adf55880867110126bcc145e7c078fd055f6ba46e4609b7b513886753de4a",
+      "bytes": 66472
+    },
+    {
+      "file": "demo/horse.webp",
+      "sha256": "852674bacbf985da9e397f12375961ee9f3e2fd11738afd897c86c1c51edd48d",
+      "bytes": 5164
+    },
+    {
+      "file": "demo/hubble_deep_field.webp",
+      "sha256": "3e8cb1ce8b7835b1bd08247394d70d73d8b4a5276ea5b99d5477706d8af84adc",
+      "bytes": 32840
+    },
+    {
+      "file": "demo/rocket.webp",
+      "sha256": "fa6c0fb95b0786e8df351a44e21e9e8c9e56c31d7d2de8aa363d5c92c448dcb1",
+      "bytes": 14970
     }
   ],
   "errors": []
