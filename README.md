@@ -130,7 +130,7 @@
 | **03** | **預覽並套用** — 核對逐檔目的地與實際影響，再確認執行。只加標籤也會先預覽。 |
 | **04** | **結果與復原** — 查看完成結果，或從「最近操作」復原。紀錄跨重啟保存；遇到原位置被占用或檔案已變更時，會列出衝突，不任意覆寫。 |
 
-**[觀看四步互動導覽 →](https://liutouo.github.io/Pixora-releases/#guide)**
+**[探索整理與復原 →](https://liutouo.github.io/Pixora-releases/#feature-recovery)**
 
 <details>
 <summary><strong>查看智慧整理的審核畫面</strong></summary>
@@ -159,13 +159,17 @@
 - **搜尋與分類管線** — CLIP＋ONNX 產生圖片／文字向量，USearch／HNSW 搜尋後以 SQLite 對應圖片；PCA／HDBSCAN 輔助未知內容群聚，最終分類仍經人工審核。
 - **可恢復的操作設計** — GPU／CPU 備援、內容與模型版本快取、可重建索引，以及預覽、衝突核對與持久化復原。
 
-**[查看工程設計與量測證據 →](https://liutouo.github.io/Pixora-releases/#engineering)**
+**[查看核心量測資料 →](docs/evidence/benchmark-1000000.json)** · **[查看畫面擷取與操作驗證 →](docs/evidence/capture-provenance.json)**
 
-工程頁收錄歷史**合成向量核心 benchmark**，不是圖片分類正確率，也不是百萬張真實圖片的產品效能。完整百萬張真實圖片的端到端驗收尚未完成。
+歷史核心量測（2026-09-17）以 512 維合成向量量測 100 萬筆「ANN 搜尋 + SQLite ID lookup」，不含模型推論與 UI。Recall@50 是對精確向量搜尋的召回率，不是圖片分類正確率，也不是百萬張真實圖片的產品效能。完整百萬張真實圖片的端到端驗收尚未完成。
+
+量測環境：Windows 11 · Ryzen 7 9800X3D · 約 32 GiB RAM · 4 threads · 200 queries。
 
 ## 回報問題
 
 請到 **[Issues](https://github.com/LiuTouo/Pixora-releases/issues)** 提供使用版本、重現步驟與錯誤訊息。附上截圖或紀錄前，請先遮蔽私人圖片、路徑及其他個人資訊。
+
+## 素材來源
 
 <details>
 <summary><strong>畫面版本、示範資料與素材來源</strong></summary>
@@ -174,7 +178,8 @@
 
 - 使用真實 CPU 推論，展示 **12 張不同圖片**。智慧整理初步結果皆需人工判斷；由人選取太空人與火箭，確認「太空探索」，不宣稱自動分類成功。
 - 實際搬移並復原 2 個檔案，以 SHA-256 驗證內容與位置；這是小型操作示範，**不是辨識準確率 benchmark**。
-- [63 秒真實操作影片與字幕](https://liutouo.github.io/Pixora-releases/#demo)：連續擷取 WebView 畫面，僅剪去片尾停留；模型、CPU 分析與初步智慧整理在錄影前完成。
+- [63 秒真實操作影片](https://liutouo.github.io/Pixora-releases/#demo)：連續擷取 WebView 畫面，約每秒 5 張畫面，僅剪去片尾停留；模型、CPU 分析與初步智慧整理在錄影前完成。網站動畫不代表原影片的錄製幀率。
+- [繁體中文字幕（VTT）](docs/assets/demo.zh-TW.vtt) 已改為操作導引，保留原有九段時間碼、人工確認事實與原圖備份提醒；影片、截圖及操作驗證資料不變。
 - [查看擷取紀錄、逐張來源授權與驗證](docs/evidence/capture-provenance.json)。
 
 示範素材經由 [scikit-image data](https://scikit-image.org/docs/stable/api/skimage.data.html) v0.25.2，皆為 CC0／公有領域，涵蓋動物、咖啡、攝影師、太空人、火箭、星系、時鐘與材質；未以複製或裁切變體增加數量。每張作者、授權依據、來源及雜湊見上述擷取紀錄。

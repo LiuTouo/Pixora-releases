@@ -1,0 +1,2 @@
+# Keep downloadable captions byte-identical to the inline track and provenance.
+docs/assets/*.vtt text eol=lf

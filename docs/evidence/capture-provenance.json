@@ -41,7 +41,8 @@
     "capture": "Continuous real desktop WebView frames through the independently owned CDP session, approximately 5 frames/second; encoded H.264 at 10 fps by frame repetition, no frame interpolation.",
     "editing": "Only the final idle tail is trimmed from a 78.112-second capture. Models, CPU image analysis and initial smart analysis were prepared before recording. UI actions and results are unaltered.",
     "captions": "demo.zh-TW.vtt",
-    "caption_language": "zh-TW"
+    "caption_language": "zh-TW",
+    "caption_editing": "Captions rewritten as concise user-facing operation guidance; all nine cue timings, manual review actions and backup reminder retained. Video frames, screenshots and capture evidence are unchanged."
   },
   "cover": {
     "file": "cover-source.png",
@@ -213,8 +214,8 @@
     },
     {
       "file": "demo.zh-TW.vtt",
-      "sha256": "c4e8e38d8520fe8a9d6c3033ed6e708541fe43ea3fcd098231121dcc9921014b",
-      "bytes": 1064
+      "sha256": "a10104ce3fc3ae7b2a579ab516c4221c673c5f2c935e8cc2f8390a62a2d0953b",
+      "bytes": 811
     }
   ],
   "errors": []

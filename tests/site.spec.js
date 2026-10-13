@@ -8,6 +8,7 @@ const { createHash } = require('node:crypto');
 const docs = path.resolve(__dirname, '../docs');
 const site = process.env.SITE_URL || pathToFileURL(path.join(docs, 'index.html')).href;
 const release = 'https://github.com/LiuTouo/Pixora-releases/releases/latest';
+const sceneIds = ['library', 'search', 'smart', 'recovery'];
 
 async function expectImagesLoaded(page) {
   const images = page.locator('main img');
@@ -19,17 +20,34 @@ async function expectNoOverflow(page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
+async function expectScene(page, index) {
+  await expect(page.getByRole('tab').nth(index)).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toHaveCount(1);
+  await expect(page.locator(`#feature-${sceneIds[index]}`)).toBeVisible();
+  expect(await page.locator('.feature-panel').evaluateAll(panels => panels.filter(panel => !panel.inert).length)).toBe(1);
+}
+
+async function scrollToScene(page, index) {
+  await page.evaluate(index => {
+    const section = document.querySelector('#features');
+    const stage = document.querySelector('.showcase-stage');
+    const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height'));
+    const start = section.getBoundingClientRect().top + scrollY - header - 12;
+    window.scrollTo({ top: start + (index + .5) / 4 * (section.offsetHeight - stage.offsetHeight), behavior: 'instant' });
+  }, index);
+}
+
 test('feature tabs support mouse, Arrow keys, wrapping, Home and End', async ({ page }) => {
   await page.goto(site);
   const tabs = page.getByRole('tab');
   await expect(tabs).toHaveCount(4);
-  await expect(tabs.nth(0)).toHaveAttribute('aria-selected', 'true');
+  await expectScene(page, 0);
   await tabs.nth(1).click();
-  await expect(page.locator('#feature-search')).toBeVisible();
+  await expectScene(page, 1);
   await expect(page.locator('#feature-library')).toBeHidden();
   await tabs.nth(1).press('ArrowRight');
   await expect(tabs.nth(2)).toBeFocused();
-  await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
+  await expectScene(page, 2);
   await tabs.nth(2).press('End');
   await expect(tabs.nth(3)).toBeFocused();
   await tabs.nth(3).press('ArrowRight');
@@ -42,29 +60,89 @@ test('feature tabs support mouse, Arrow keys, wrapping, Home and End', async ({ 
   await expect(page.locator('#feature-library')).toBeFocused();
   for (let index = 0; index < 4; index++) {
     await tabs.nth(index).click();
-    await expect(page.getByRole('tabpanel')).toHaveCount(1);
+    await expectScene(page, index);
     await expect(tabs.nth(index)).toHaveAttribute('tabindex', '0');
   }
 });
 
-test('tour supports previous, next and direct steps without auto-rotation', async ({ page }) => {
+test('native scrolling drives all four scenes forward and backward without adding history', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(site);
-  const previous = page.getByRole('button', { name: '← 上一步' });
-  const next = page.getByRole('button', { name: '下一步 →' });
-  await expect(previous).toBeDisabled();
-  for (const id of ['review', 'preview', 'completed']) {
-    await next.click();
-    await expect(page.locator(`#tour-${id}`)).toBeVisible();
+  await expect(page.locator('#features')).toHaveClass(/is-pinned/);
+  const historyLength = await page.evaluate(() => history.length);
+  for (const index of [0, 1, 2, 3, 2, 1, 0]) {
+    await scrollToScene(page, index);
+    await expectScene(page, index);
+    const stage = await page.locator('.showcase-stage').boundingBox();
+    const header = await page.locator('.site-header').boundingBox();
+    expect(stage.y).toBeGreaterThanOrEqual(header.height);
+    expect(stage.y + stage.height).toBeLessThanOrEqual(1000);
   }
-  await expect(next).toBeDisabled();
-  await expect(page.locator('.tour-status')).toContainText('步驟 4 / 4');
-  await previous.click();
-  await expect(page.locator('#tour-preview')).toBeVisible();
-  await page.locator('.tour-steps a').nth(0).click();
-  await expect(page.locator('#tour-scope')).toBeVisible();
-  await expect(page.locator('.tour-steps a').nth(0)).toHaveAttribute('aria-current', 'step');
+  const distance = await page.locator('#features').evaluate(section => section.offsetHeight - section.querySelector('.showcase-stage').offsetHeight);
+  await page.mouse.move(1000, 500);
+  await page.mouse.wheel(0, distance / 4);
+  await expectScene(page, 1);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  expect(new URL(page.url()).hash).toBe('');
+});
+
+test('rapid changes cancel old layers and do not auto-rotate on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(site);
+  await page.locator('.tab-links').evaluate(list => {
+    const tabs = list.querySelectorAll('a');
+    for (const index of [3, 0, 2, 1, 3, 2]) tabs[index].click();
+  });
+  await expectScene(page, 2);
+  await expect(page.locator('.is-leaving')).toHaveCount(0);
+  await expect.poll(() => page.locator('.feature-panels').evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
+  const active = await page.getByRole('tab').nth(2).boundingBox();
+  const indicator = await page.locator('.tab-indicator').boundingBox();
+  expect(Math.abs(indicator.x - active.x)).toBeLessThan(1);
+  expect(Math.abs(indicator.y - (active.y + active.height - 2))).toBeLessThan(1);
   await page.waitForTimeout(1200);
-  await expect(page.locator('#tour-scope')).toBeVisible();
+  await expectScene(page, 2);
+  await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
+});
+
+test('scroll never hides the panel containing keyboard focus', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.goto(site);
+  await page.getByRole('tab').first().click();
+  await page.getByRole('tab').first().press('Tab');
+  await expect(page.locator('#feature-library')).toBeFocused();
+  await scrollToScene(page, 2);
+  await page.waitForTimeout(150);
+  await expectScene(page, 0);
+  await expect(page.locator('#feature-library')).toBeFocused();
+  await page.getByRole('tab').first().evaluate(tab => tab.focus({ preventScroll: true }));
+  await expectScene(page, 2);
+});
+
+test('resize, short windows and live reduced motion retain selection without empty scroll space', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.goto(site);
+  await page.getByRole('tab').nth(2).click();
+  await expect(page.locator('#features')).toHaveClass(/is-pinned/);
+  for (const viewport of [{ width: 375, height: 812 }, { width: 1280, height: 600 }, { width: 1280, height: 1000 }]) {
+    await page.setViewportSize(viewport);
+    await expectScene(page, 2);
+    await expectNoOverflow(page);
+    if (viewport.height === 1000) await expect(page.locator('#features')).toHaveClass(/is-pinned/);
+    else {
+      await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
+      expect((await page.locator('#features').boundingBox()).height).toBeLessThan(1600);
+    }
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
+  await expectScene(page, 2);
+  await page.getByRole('tab').nth(3).click();
+  await expectScene(page, 3);
+  expect(await page.locator('.feature-panels').evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('#features')).toHaveClass(/is-pinned/);
+  await expectScene(page, 3);
 });
 
 test('lightbox closes by button and Escape and restores focus, including text image link', async ({ page }) => {
@@ -82,7 +160,7 @@ test('lightbox closes by button and Escape and restores focus, including text im
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
-  await page.locator('.tour-steps a').nth(3).click();
+  await page.getByRole('tab').nth(3).click();
   const undo = page.getByRole('link', { name: '查看復原畫面' });
   await undo.click();
   await expect(dialog.locator('img')).toHaveAttribute('src', /undo\.webp$/);
@@ -91,13 +169,10 @@ test('lightbox closes by button and Escape and restores focus, including text im
   await expect(undo).toBeFocused();
 });
 
-test('FAQ works with mouse and keyboard; downloads and metadata are correct', async ({ page }) => {
+test('FAQ, downloads, metadata and user-facing content are correct', async ({ page }) => {
   await page.goto(site);
-  const repo = page.locator('.site-header .nav-github');
-  await expect(repo).toHaveAttribute('href', 'https://github.com/LiuTouo/Pixora-releases');
-  await expect(repo).toBeInViewport();
-  const summary = page.locator('summary').first();
-  const details = page.locator('details').first();
+  const summary = page.locator('#faq summary').first();
+  const details = page.locator('#faq details').first();
   await summary.click();
   await expect(details).toHaveAttribute('open', '');
   await summary.press('Enter');
@@ -108,33 +183,69 @@ test('FAQ works with mouse and keyboard; downloads and metadata are correct', as
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://liutouo.github.io/Pixora-releases/');
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\/Pixora-releases\/assets\/pixora-cover\.webp$/);
-  await expect(page.locator('#engineering')).toContainText('USearch');
-  await expect(page.locator('.sources')).toContainText('不是圖片分類正確率');
-  await expect(page.locator('.sources a[href="evidence/benchmark-1000000.json"]')).toHaveCount(1);
+  await expect(page.locator('#engineering, .sources, .tour-controls')).toHaveCount(0);
+  await expect(page.locator('.site-header')).not.toContainText('GitHub');
+  await expect(page.locator('.site-footer a').filter({ hasText: 'GitHub' })).toHaveAttribute('href', 'https://github.com/LiuTouo/Pixora-releases');
+  await expect(page.getByRole('link', { name: '素材來源' })).toHaveAttribute('href', /#素材來源$/);
+  const text = await page.locator('main').textContent();
+  expect(text).not.toMatch(/benchmark|SHA-256|CLIP|ONNX|USearch|HNSW|SQLite|HDBSCAN|CDP|production|工程設計|隔離測試|百萬/);
+  for (const term of ['英文', '背景分析佇列', '不包含原始圖片', '本次工作階段', '回收筒', '不要停用安全保護']) expect(text).toContain(term);
+  const captions = await fs.readFile(path.join(docs, 'assets/demo.zh-TW.vtt'), 'utf8');
+  expect(captions).not.toMatch(/benchmark|SHA-256|CLIP|ONNX|測試|雜湊/);
+  expect(captions).toContain('人工選取');
   const anchors = await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => href !== '#'));
   for (const anchor of anchors) await expect(page.locator(anchor)).toHaveCount(1);
 });
 
-test('without JavaScript all feature and tour content remains readable with real image/download links', async ({ browser }) => {
+test('without JavaScript all scenes remain readable with real image and download links', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
   const page = await context.newPage();
   try {
     await page.goto(site);
-    for (const panel of await page.locator('.feature-panel, .tour-panel').all()) await expect(panel).toBeVisible();
-    await expect(page.locator('.tour-controls')).toBeHidden();
+    for (const panel of await page.locator('.feature-panel').all()) await expect(panel).toBeVisible();
+    await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
     await expect(page.locator('#demo video')).toHaveAttribute('controls', '');
     await expect(page.getByRole('link', { name: '開啟 MP4 影片' })).toHaveAttribute('href', 'assets/demo.mp4');
     await expect(page.locator('.demo-transcript summary')).toBeVisible();
     for (const link of await page.getByRole('link', { name: '下載 Windows 版' }).all()) await expect(link).toHaveAttribute('href', release);
     await page.locator('a[href="#feature-search"]').click();
     await expect(page.locator('#feature-search')).toBeInViewport();
-    await page.locator('summary').first().click();
-    await expect(page.locator('details').first()).toHaveAttribute('open', '');
+    await page.locator('#faq summary').first().click();
+    await expect(page.locator('#faq details').first()).toHaveAttribute('open', '');
     await expectImagesLoaded(page);
     await expectNoOverflow(page);
     await page.locator('.hero-shot .image-link').click();
     await expect(page).toHaveURL(/library\.webp$/);
   } finally { await context.close(); }
+});
+
+test('blocked site script leaves the page visible and fully readable', async ({ page }) => {
+  await page.route('**/site.js', route => route.abort());
+  await page.goto(site);
+  await expect(page.locator('.tabs-ready')).toHaveCount(0);
+  for (const panel of await page.locator('.feature-panel').all()) await expect(panel).toBeVisible();
+  expect(await page.locator('[data-reveal]').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1'))).toBe(true);
+  await expect(page.getByRole('link', { name: '下載 Windows 版' }).first()).toHaveAttribute('href', release);
+});
+
+test('missing animation, observer and dialog APIs retain ordinary controls', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    Element.prototype.animate = undefined;
+    window.IntersectionObserver = undefined;
+    window.ResizeObserver = undefined;
+    HTMLDialogElement.prototype.showModal = undefined;
+  });
+  await page.goto(site);
+  for (let index = 0; index < 4; index++) {
+    await page.getByRole('tab').nth(index).click();
+    await expectScene(page, index);
+  }
+  expect(await page.locator('[data-reveal]').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1'))).toBe(true);
+  expect(errors).toEqual([]);
+  await page.locator('.hero-shot .image-link').click();
+  await expect(page).toHaveURL(/library\.webp$/);
 });
 
 for (const width of [375, 768, 1280, 1920]) {
@@ -150,65 +261,97 @@ for (const width of [375, 768, 1280, 1920]) {
     await page.goto(site);
     await expectImagesLoaded(page);
     await expectNoOverflow(page);
-    for (const tab of await page.getByRole('tab').all()) {
+    for (let index = 0; index < 4; index++) {
+      const tab = page.getByRole('tab').nth(index);
       await tab.click();
+      await expectScene(page, index);
       await expectNoOverflow(page);
       expect((await tab.boundingBox()).height).toBeGreaterThanOrEqual(44);
-    }
-    for (const step of await page.locator('.tour-steps a').all()) {
-      await step.click();
-      await expectNoOverflow(page);
-      expect((await step.boundingBox()).height).toBeGreaterThanOrEqual(44);
     }
     for (const summary of await page.locator('summary').all()) await summary.click();
     await expectNoOverflow(page);
     await page.getByRole('tab').first().click();
-    await page.locator('.tour-steps a').first().click();
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await page.evaluate(() => document.querySelectorAll('[data-reveal]').forEach(element => { element.style.transition = 'none'; element.classList.add('revealed'); }));
+    await expect(page.locator('.is-leaving')).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath(`showcase-${width}.png`) });
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await page.screenshot({ path: testInfo.outputPath(`site-${width}.png`), fullPage: true });
     await page.screenshot({ path: testInfo.outputPath(`hero-${width}.png`) });
     expect(errors).toEqual([]);
     expect(failedRequests).toEqual([]);
-    expect(requests.every(url => url.startsWith(new URL('.', site).href))).toBe(true);
+    expect(requests.every(url => url.startsWith(new URL('.', site).href) || url.startsWith('data:'))).toBe(true);
   });
 }
 
-test('200% text and reduced motion retain layout and interaction', async ({ page }) => {
+test('200% text and reduced motion retain layout, FAQ, lightbox and interaction', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(site);
   await page.addStyleTag({ content: ':root { font-size: 200%; }' });
   for (const width of [375, 768, 1280, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const tab of await page.getByRole('tab').all()) {
-      await tab.click();
+    for (let index = 0; index < 4; index++) {
+      await page.getByRole('tab').nth(index).click();
+      await expectScene(page, index);
       await expectNoOverflow(page);
     }
-    for (const step of await page.locator('.tour-steps a').all()) {
-      await step.click();
-      await expectNoOverflow(page);
-    }
+    await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
   }
   expect(await page.locator('.button').first().evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s');
   await page.locator('.hero-shot .image-link').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expectNoOverflow(page);
   await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 375, height: 1000 });
+  for (const summary of await page.locator('summary').all()) await summary.click();
+  await expectNoOverflow(page);
+  await page.locator('#faq').screenshot({ path: testInfo.outputPath('faq-375-text200.png') });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await expect(page.locator('#features')).not.toHaveClass(/is-pinned/);
 });
 
-test('direct links reveal enhanced panels', async ({ page }) => {
+test('feature and legacy deep links, malformed hashes and browser history work', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${site}#feature-search`);
-  await expect(page.locator('#feature-search')).toBeVisible();
-  await page.evaluate(() => { location.hash = 'tour-preview'; });
-  await expect(page.locator('#tour-preview')).toBeVisible();
+  await expectScene(page, 1);
+  await page.getByRole('tab').nth(2).click();
+  await page.goBack();
+  await expectScene(page, 1);
+  await page.goForward();
+  await expectScene(page, 2);
+  for (const [id, index] of [['tour-review', 2], ['tour-preview', 3], ['tour-completed', 3]]) {
+    await page.evaluate(id => { location.hash = id; }, id);
+    await expectScene(page, index);
+    await expect(page.locator(`#feature-${sceneIds[index]}`)).toBeInViewport();
+  }
+  await page.evaluate(() => { location.hash = 'tour-scope'; });
+  await expect(page.locator('#guide')).toBeInViewport();
+  for (const hash of ['#%E0%A4%A', '#[', '#not-a-section']) await page.evaluate(hash => { location.hash = hash; }, hash);
+  expect(errors).toEqual([]);
+});
+
+test('mobile Back restores the initial fragmentless scene without rewriting section links', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(site);
+  await expectScene(page, 0);
+  await page.getByRole('tab').nth(1).click();
+  await expectScene(page, 1);
+  await page.goBack();
+  expect(new URL(page.url()).hash).toBe('');
+  await expectScene(page, 0);
+  await page.goForward();
+  await expectScene(page, 1);
+  await page.locator('.site-header a[href="#guide"]').click();
+  await expect(page.locator('#guide')).toBeInViewport();
+  await expectScene(page, 1);
+  expect(new URL(page.url()).hash).toBe('#guide');
 });
 
 test('scroll reveals settle visible for every motion preference', async ({ page }) => {
   await page.goto(site);
   const reveals = page.locator('[data-reveal]');
   expect(await reveals.count()).toBeGreaterThan(10);
-  // A single jump never renders intermediate positions, so IntersectionObserver
-  // legitimately skips mid-page elements. Scroll through like a real user.
   await page.evaluate(async () => {
     for (let y = 0; y <= document.documentElement.scrollHeight; y += 400) {
       window.scrollTo({ top: y, behavior: 'instant' });
@@ -270,6 +413,7 @@ test('relative assets and evidence work under /Pixora-releases/ HTTP subpath', a
     expect(provenance.file_verification).toHaveLength(2);
     expect(provenance.file_verification.every(file => file.moved && file.restored && /^[a-f0-9]{64}$/.test(file.sha256))).toBe(true);
     expect(provenance.all_12_original_hashes_restored).toBe(true);
+    expect(provenance.video.caption_editing).toContain('unchanged');
     for (const asset of provenance.published_files) {
       const response = await page.request.get(new URL(`assets/${asset.file}`, root).href);
       expect(response.ok(), asset.file).toBe(true);
@@ -315,11 +459,10 @@ test('relative assets and evidence work under /Pixora-releases/ HTTP subpath', a
       await video.scrollIntoViewIfNeeded();
       const before = await video.evaluate(element => element.currentTime);
       await video.evaluate(element => element.play());
-      await expect.poll(() => video.evaluate(element => element.currentTime)).toBeGreaterThan(before + 0.1);
+      await expect.poll(() => video.evaluate(element => element.currentTime)).toBeGreaterThan(before + .1);
       await video.evaluate(element => element.pause());
       await expectNoOverflow(page);
-      const bounds = await video.boundingBox();
-      expect(bounds.width).toBeLessThanOrEqual(width);
+      expect((await video.boundingBox()).width).toBeLessThanOrEqual(width);
       await page.screenshot({ path: test.info().outputPath(`demo-${width}.png`) });
     }
     expect(badResponses).toEqual([]);
@@ -329,19 +472,4 @@ test('relative assets and evidence work under /Pixora-releases/ HTTP subpath', a
       server.closeAllConnections();
     });
   }
-});
-
-test('footer provenance details stay collapsed and contained at 200% text', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 375, height: 1000 });
-  await page.goto(site);
-  await page.addStyleTag({ content: ':root { font-size: 200%; }' });
-  const sources = page.locator('.sources');
-  await expect(sources.locator('.sources-body')).toBeHidden();
-  await sources.locator('summary').click();
-  await expect(sources.locator('.sources-body')).toBeVisible();
-  expect(await sources.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-  for (const link of await sources.locator('a').all()) {
-    expect(await link.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-  }
-  await sources.screenshot({ path: testInfo.outputPath('sources-375-text200.png') });
 });
