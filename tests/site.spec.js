@@ -92,6 +92,9 @@ test('lightbox closes by button and Escape and restores focus, including text im
 
 test('FAQ works with mouse and keyboard; downloads and metadata are correct', async ({ page }) => {
   await page.goto(site);
+  const repo = page.locator('.site-header .nav-github');
+  await expect(repo).toHaveAttribute('href', 'https://github.com/LiuTouo/Pixora-releases');
+  await expect(repo).toBeInViewport();
   const summary = page.locator('summary').first();
   const details = page.locator('details').first();
   await summary.click();

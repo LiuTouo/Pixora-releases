@@ -38,6 +38,7 @@ nav { display: flex; flex-wrap: wrap; gap: 8px; }
 .site-header nav a { display: inline-flex; align-items: center; padding: 8px 12px; min-height: 44px; color: var(--muted); text-decoration: none; font-size: .9rem; }
 .site-header nav a:hover { color: var(--accent); }
 .site-header nav .nav-download { color: var(--accent); border: 1px solid var(--line); border-radius: 6px; gap: 16px; }
+.site-header nav .nav-github { color: var(--ink); border: 1px solid var(--line); border-radius: 6px; gap: 8px; }
 .hero { padding-top: 76px; }
 .hero-copy { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 64px; align-items: end; }
 .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .16em; color: var(--accent); margin-bottom: 24px; }
