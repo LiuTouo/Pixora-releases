@@ -240,3 +240,32 @@ if (typeof lightbox.showModal === 'function') {
   lightbox.querySelector('[data-close]').addEventListener('click', () => lightbox.close());
   lightbox.addEventListener('close', () => imageOpener?.focus({ preventScroll: true }));
 }
+
+// Spotlight borders: decorative pointer tracking on image cards.
+if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.querySelectorAll('.image-link').forEach(link => {
+    link.addEventListener('pointermove', event => {
+      const box = link.getBoundingClientRect();
+      link.style.setProperty('--spot-x', `${event.clientX - box.left}px`);
+      link.style.setProperty('--spot-y', `${event.clientY - box.top}px`);
+    });
+  });
+}
+
+// Scrollspy: mark the nav link of the section currently in view.
+const navLinks = [...document.querySelectorAll('.site-header nav a[href^="#"]')];
+if (navLinks.length && typeof window.IntersectionObserver === 'function') {
+  const spy = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      navLinks.forEach(link => {
+        if (link.getAttribute('href') === `#${entry.target.id}`) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      });
+    }
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  navLinks.forEach(link => {
+    const section = document.getElementById(link.getAttribute('href').slice(1));
+    if (section) spy.observe(section);
+  });
+}
