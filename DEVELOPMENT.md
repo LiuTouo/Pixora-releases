@@ -26,7 +26,7 @@ npm test
 Remove-Item Env:SITE_URL
 ```
 
-Tests cover interaction, keyboard access, no-JavaScript reading, image loading, subpath hosting, viewport widths, enlarged text and reduced motion. A Node standard-library HTTP server exists only inside the subpath test; no server package or separate startup is needed. Viewport screenshots are written into the ignored `test-results/` directory. Inspect desktop and mobile output after layout changes; automated overflow checks do not replace visual review.
+Tests cover interaction, keyboard access, no-JavaScript reading, image loading, subpath hosting, viewport widths, enlarged text and reduced motion. The subpath test also verifies native video playback/seeking, captions and every media hash in the capture provenance; its local HTTP server supports byte ranges. The caption track embeds the same downloadable VTT as a data URL so direct file viewing does not trigger cross-origin track errors; update both copies together (the test checks equality). A Node standard-library HTTP server exists only inside the subpath test; no server package or separate startup is needed. Viewport screenshots are written into the ignored `test-results/` directory. Inspect desktop and mobile output after layout changes; automated overflow checks do not replace visual review.
 
 ## GitHub Pages
 

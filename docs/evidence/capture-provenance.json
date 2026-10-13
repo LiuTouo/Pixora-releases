@@ -1,60 +1,221 @@
 {
   "app_version": "0.3.7",
   "source_tag": "v0.3.7",
-  "build": "Isolated debug build of the exact published source tag with embedded production frontend; CDP enabled for screenshots.",
-  "sample_count": 8,
-  "distinct_visuals": 4,
+  "source_commit": "804d2b39b4e9ecb50b97fe2df8c59d0fb029b803",
+  "build": "Isolated debug source build with embedded production frontend; no product-source changes. Analysis worker rebuilt from the same tag and locked dependencies.",
+  "capture_date": "2026-10-13",
+  "sample_count": 12,
+  "distinct_visuals": 12,
   "real_clip_cpu_inference": true,
+  "model": {
+    "name": "CLIP ViT-B/32",
+    "revision": "d15189d7028b43f1d3e65039190477f6af591c2a",
+    "runtime": "ONNX Runtime 1.22.0 CPU"
+  },
   "semantic_query": "a photograph of a cat",
-  "smart_confirmed": 8,
+  "smart_exceptions_before_review": 12,
+  "smart_confirmed": 2,
+  "review": "All 12 samples needed individual judgment. The operator manually selected astronaut.png and rocket.jpg and named the group 太空探索; this is not automatic classification accuracy evidence.",
   "actual_files_moved_and_restored": 2,
-  "screenshots": [
-    "completed.png",
-    "library.png",
-    "preview.png",
-    "review.png",
-    "scope.png",
-    "search.png",
-    "setup.png",
-    "undo.png"
+  "file_verification": [
+    {
+      "source": "rocket.jpg",
+      "target": "太空探索/rocket.jpg",
+      "sha256": "c2dd0de7c538df8d111e479619b129464d0269d0ae5fd18ca91d33a7fdfea95c",
+      "moved": true,
+      "restored": true
+    },
+    {
+      "source": "astronaut.png",
+      "target": "太空探索/astronaut.png",
+      "sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+      "moved": true,
+      "restored": true
+    }
   ],
-  "errors": [],
-  "published_files": [
-    "completed.webp",
-    "library.webp",
-    "preview.webp",
-    "review.webp",
-    "scope.webp",
-    "search.webp",
-    "setup.webp",
-    "undo.webp"
-  ],
-  "processing": "PNG screenshots converted to WebP for delivery; no product UI, results or paths altered.",
+  "all_12_original_hashes_restored": true,
+  "video": {
+    "file": "demo.mp4",
+    "duration_seconds": 63,
+    "audio": false,
+    "capture": "Continuous real desktop WebView frames through the independently owned CDP session, approximately 5 frames/second; encoded H.264 at 10 fps by frame repetition, no frame interpolation.",
+    "editing": "Only the final idle tail is trimmed from a 78.112-second capture. Models, CPU image analysis and initial smart analysis were prepared before recording. UI actions and results are unaltered.",
+    "captions": "demo.zh-TW.vtt",
+    "caption_language": "zh-TW"
+  },
+  "cover": {
+    "file": "cover-source.png",
+    "source": "Previously verified same-tag real semantic-search PNG from the first isolated 12-image capture, reused without alteration.",
+    "sha256": "debfb3837a27e75a511018149c84a8dcaa460bb68bda46500b926e0b6b96ef99"
+  },
+  "processing": "Real PNG screenshots converted to WebP. Setup and scope are cropped to their real content panels to remove empty margins; no UI elements are replaced. Completed/undo images are genuine frames from the continuous recording (approximately 46s/52s). No DOM mock, invoke-response replacement, UI fabrication or image-result substitution.",
+  "scope": "Small operation demonstration only; not an accuracy benchmark or million-real-image end-to-end acceptance.",
   "sample_sources": [
     {
-      "file": "cat.png",
-      "author": "Stefan van der Walt",
-      "source": "scikit-image Chelsea sample",
-      "license": "CC0"
-    },
-    {
-      "file": "coffee.png",
-      "author": "Rachel Michetti",
-      "source": "scikit-image coffee sample",
-      "license": "CC0"
-    },
-    {
-      "file": "horse.png",
-      "author": "Andreas Preuss",
-      "source": "Openclipart via scikit-image",
-      "license": "CC0"
+      "file": "camera.png",
+      "author": "Lav Varshney",
+      "license": "CC0",
+      "subject": "photographer",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/camera.png",
+      "sha256": "b0793d2adda0fa6ae899c03989482bff9a42d3d5690fc7e3648f2795d730c23a",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
     },
     {
       "file": "astronaut.png",
       "author": "NASA",
-      "source": "Eileen Collins photograph via scikit-image",
-      "license": "Public domain"
+      "license": "Public domain",
+      "subject": "astronaut",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+      "sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "brick.png",
+      "author": "CC0Textures",
+      "license": "CC0",
+      "subject": "brick wall",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/brick.png",
+      "sha256": "7966caf324f6ba843118d98f7a07746d22f6a343430add0233eca5f6eaaa8fcf",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "grass.png",
+      "author": "linolafett",
+      "license": "CC0",
+      "subject": "grass",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/grass.png",
+      "sha256": "b6b6022426b38936c43a4ac09635cd78af074e90f42ffa8227ac8b7452d39f89",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "gravel.png",
+      "author": "CC0Textures",
+      "license": "CC0",
+      "subject": "gravel",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/gravel.png",
+      "sha256": "c48615b451bf1e606fbd72c0aa9f8cc0f068ab7111ef7d93bb9b0f2586440c12",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "horse.png",
+      "author": "Andreas Preuss / Openclipart",
+      "license": "CC0",
+      "subject": "horse silhouette",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/horse.png",
+      "sha256": "c7fb60789fe394c485f842291ea3b21e50d140f39d6dcb5fb9917cc178225455",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "chelsea.png",
+      "author": "Stefan van der Walt",
+      "license": "CC0",
+      "subject": "cat",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+      "sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "coffee.png",
+      "author": "Rachel Michetti",
+      "license": "CC0",
+      "subject": "coffee",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+      "sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "hubble_deep_field.jpg",
+      "author": "NASA",
+      "license": "Public domain",
+      "subject": "galaxies",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/hubble_deep_field.jpg",
+      "sha256": "3a19c5dd8a927a9334bb1229a6d63711b1c0c767fb27e2286e7c84a3e2c2f5f4",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "rocket.jpg",
+      "author": "SpaceX",
+      "license": "Public domain",
+      "subject": "rocket launch",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/rocket.jpg",
+      "sha256": "c2dd0de7c538df8d111e479619b129464d0269d0ae5fd18ca91d33a7fdfea95c",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "eagle.png",
+      "author": "Dayane Machado",
+      "license": "CC0",
+      "subject": "eagle",
+      "source": "https://gitlab.com/scikit-image/data/-/raw/1e4f62ac31ba4553d176d4473a5967ad1b076d62/eagle.png",
+      "sha256": "928f1bbe7403b533265f56db3a6b07c835dfa8e2513f5c5075ca2f1960f6179e",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
+    },
+    {
+      "file": "clock_motion.png",
+      "author": "Stefan van der Walt",
+      "license": "Public domain",
+      "subject": "clock",
+      "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/clock_motion.png",
+      "sha256": "f029226b28b642e80113d86622e9b215ee067a0966feaf5e60604a1e05733955",
+      "license_evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py"
     }
   ],
-  "source_reference": "https://scikit-image.org/docs/stable/api/skimage.data.html"
+  "published_files": [
+    {
+      "file": "library.webp",
+      "sha256": "78ba037dcafaf50d0339a23d41fb7f8be2e5dad692eda1c9d3504f76ca735840",
+      "bytes": 110210
+    },
+    {
+      "file": "search.webp",
+      "sha256": "70a49ff8eca9b745d39cfd2198251ee206c4e3b041c53a0b654f89dcf161b39a",
+      "bytes": 83158
+    },
+    {
+      "file": "setup.webp",
+      "sha256": "b9be3620112d3cd723f4b15268f7d969b003109fb5086ab4ba3e9edc81020fa1",
+      "bytes": 61606
+    },
+    {
+      "file": "scope.webp",
+      "sha256": "2babf5663e47523e1b63aaec0fff3f850a80294f293cb58d32a00795bed67cd0",
+      "bytes": 36262
+    },
+    {
+      "file": "review.webp",
+      "sha256": "8ee42c04b5e47eea0ce5d6ed9273ea31c81297b9dfbcb44e1f6a72c35108f4b0",
+      "bytes": 48114
+    },
+    {
+      "file": "preview.webp",
+      "sha256": "0421f882bc753b001eaded2f239cf9e47ad58d667308ed2b5415c35c5e63ade3",
+      "bytes": 24544
+    },
+    {
+      "file": "completed.webp",
+      "sha256": "cb5a9054977bc154dc431efe125255c19cc2c26b2a46cdd8ebb18a94454b51b3",
+      "bytes": 24182
+    },
+    {
+      "file": "undo.webp",
+      "sha256": "a449a88995bb26222590ffeede2ea679bb3dce5bb92e51732268041b6005ea61",
+      "bytes": 23380
+    },
+    {
+      "file": "demo-poster.webp",
+      "sha256": "3e8656a3b889401f64fa92d2ca4460fee84a7d968fe58ed6c0ba2c73a1e504de",
+      "bytes": 83168
+    },
+    {
+      "file": "demo.mp4",
+      "sha256": "4384d686c301c5976d380b5494d7c525b83a549d9dd139a4a9d1be5ea85e698d",
+      "bytes": 1223963
+    },
+    {
+      "file": "demo.zh-TW.vtt",
+      "sha256": "c4e8e38d8520fe8a9d6c3033ed6e708541fe43ea3fcd098231121dcc9921014b",
+      "bytes": 1064
+    }
+  ],
+  "errors": []
 }

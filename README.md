@@ -172,11 +172,12 @@
 
 產品截圖來自 **v0.3.7 同版本、隔離的 debug 測試建置**，內嵌 production 前端，以 CDP 擷取；不是未發行的新介面。
 
-- 使用真實 CPU 推論，8 張示範圖片來自 4 個不同視覺素材。
-- 實際搬移並復原 2 個檔案；這是小型操作示範，**不是辨識準確率 benchmark**。
-- [查看擷取紀錄](docs/evidence/capture-provenance.json)。
+- 使用真實 CPU 推論，展示 **12 張不同圖片**。智慧整理初步結果皆需人工判斷；由人選取太空人與火箭，確認「太空探索」，不宣稱自動分類成功。
+- 實際搬移並復原 2 個檔案，以 SHA-256 驗證內容與位置；這是小型操作示範，**不是辨識準確率 benchmark**。
+- [63 秒真實操作影片與字幕](https://liutouo.github.io/Pixora-releases/#demo)：連續擷取 WebView 畫面，僅剪去片尾停留；模型、CPU 分析與初步智慧整理在錄影前完成。
+- [查看擷取紀錄、逐張來源授權與驗證](docs/evidence/capture-provenance.json)。
 
-示範素材經由 [scikit-image data](https://scikit-image.org/docs/stable/api/skimage.data.html)：NASA 太空人照片（公有領域）；Chelsea 貓咪／Stefan van der Walt、咖啡／Rachel Michetti、馬匹／Andreas Preuss（Openclipart），後三者為 CC0。
+示範素材經由 [scikit-image data](https://scikit-image.org/docs/stable/api/skimage.data.html) v0.25.2，皆為 CC0／公有領域，涵蓋動物、咖啡、攝影師、太空人、火箭、星系、時鐘與材質；未以複製或裁切變體增加數量。每張作者、授權依據、來源及雜湊見上述擷取紀錄。
 
 Pixora 圖示沿用提供的品牌素材；README banner 為流程概念插畫，並非產品介面。[可編輯 SVG 原稿](docs/assets/readme-banner.svg)。
 

@@ -21,6 +21,13 @@ button, summary, .image-link { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
 ::selection { background: var(--accent); color: var(--bg); }
 img { display: block; max-width: 100%; height: auto; }
+.demo-player video { display: block; width: 100%; height: auto; background: #000; border: 1px solid var(--line); border-radius: 12px; }
+.demo-player video::cue { font-size: clamp(12px, 1.5vw, 22px); }
+.demo-player figcaption { margin-top: 16px; color: var(--muted); font-size: .85rem; }
+.demo-transcript { margin-top: 24px; }
+.demo-transcript ol { padding-left: 24px; }
+.demo-transcript li { margin-block: 12px; }
+.demo-transcript code { overflow-wrap: anywhere; }
 figure, p, h1, h2, h3, h4, dl { margin: 0; }
 p + p { margin-top: 1em; }
 h1, h2, h3, h4 { line-height: 1.35; text-wrap: balance; }
