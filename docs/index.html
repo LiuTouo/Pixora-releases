@@ -17,6 +17,7 @@
   <meta property="og:image:alt" content="Pixora 品牌封面：讓每張圖片，各得其所。">
   <meta name="theme-color" content="#0b111f">
   <link rel="icon" href="assets/favicon.png" type="image/png">
+  <script>document.documentElement.classList.add('js')</script>
   <link rel="stylesheet" href="styles.css">
   <script src="site.js" defer></script>
 </head>
@@ -30,84 +31,83 @@
   </header>
   <main id="main">
     <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow">PIXORA / WINDOWS · LOCAL AI</p>
-        <h1 id="hero-title">讓每張圖片，<br><span>各得其所。</span></h1>
-        <div class="hero-intro"><p>記得畫面，卻想不起檔名？<br>用本機 AI 找回圖片，審核分類，再整理到真正的資料夾。圖片留在你的電腦，決定權也一樣。</p>
-          <div class="actions"><a class="button primary" href="https://github.com/LiuTouo/Pixora-releases/releases/latest">下載 Windows 版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="#demo">看 63 秒真實操作 <span aria-hidden="true">↓</span></a></div>
+      <div class="hero-copy" data-reveal-group>
+        <p class="eyebrow" data-reveal>PIXORA / WINDOWS · LOCAL AI</p>
+        <h1 id="hero-title" data-reveal>讓每張圖片，<br><span>各得其所。</span></h1>
+        <div class="hero-intro"><p data-reveal>記得畫面，卻想不起檔名？<br>用本機 AI 找回圖片，審核分類，再整理到真正的資料夾。圖片留在你的電腦，決定權也一樣。</p>
+          <div class="actions" data-reveal><a class="button primary" href="https://github.com/LiuTouo/Pixora-releases/releases/latest">下載 Windows 版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="#demo">看 63 秒真實操作 <span aria-hidden="true">↓</span></a></div>
           <p class="micro">Windows x64 · 已測試 Windows 11 · GPU 選配</p>
         </div>
       </div>
-      <figure class="hero-shot">
+      <figure class="hero-shot" data-reveal>
         <div class="window-label"><span>你的資料夾，你的圖片。</span><span>PIXORA v0.3.7</span></div>
         <a class="image-link" href="assets/library.webp" data-lightbox><img src="assets/library.webp" width="1440" height="900" fetchpriority="high" alt="Pixora 圖庫：左側真實資料夾與十二張不同的示範圖片，底部可切換智慧整理、工作紀錄和設定"></a>
-        <figcaption><span>真實產品畫面 · 小型示範圖庫，非辨識品質量測</span><span>點選畫面放大 <span aria-hidden="true">↗</span></span></figcaption>
+        <figcaption><span>Pixora 圖庫 · v0.3.7</span><span>點選畫面放大 <span aria-hidden="true">↗</span></span></figcaption>
       </figure>
-      <div class="principles"><p><strong>本機運算</strong>圖片不需上傳做推論</p><p><strong>真實資料夾</strong>不把原圖鎖進封閉容器</p><p><strong>你來確認</strong>先審核、預覽，再套用</p></div>
+      <div class="principles" data-reveal-group><p data-reveal><strong>本機運算</strong>圖片不需上傳做推論</p><p data-reveal><strong>真實資料夾</strong>不把原圖鎖進封閉容器</p><p data-reveal><strong>你來確認</strong>先審核、預覽，再套用</p></div>
     </section>
 
     <section id="demo" class="section wrap" aria-labelledby="demo-title">
-      <div class="section-heading"><p class="eyebrow">63 秒 / 真實桌面操作</p><h2 id="demo-title">找圖、人工確認，<br>再搬移與復原。</h2><p>12 張不同的授權圖片，真實 CLIP／ONNX CPU 推論。這批圖片都需要人工判斷；示範由人選取太空人與火箭，並非宣稱 AI 自動分類成功。</p></div>
-      <figure class="demo-player">
+      <div class="section-heading" data-reveal><p class="eyebrow">63 秒 / 真實桌面操作</p><h2 id="demo-title">找圖、人工確認，<br>再搬移與復原。</h2><p>12 張示範圖片，真實本機推論。從語意搜尋、人工審核到搬移與復原，一氣呵成。</p></div>
+      <figure class="demo-player" data-reveal>
         <video controls playsinline preload="none" width="1440" height="900" poster="assets/demo-poster.webp" aria-label="Pixora v0.3.7 真實操作示範" aria-describedby="demo-caption">
           <source src="assets/demo.mp4" type="video/mp4">
           <!-- Inline the identical downloadable VTT so captions also work under file:// without cross-origin errors. -->
           <track kind="captions" src="data:text/vtt;base64,V0VCVlRUCgoxCjAwOjAwOjAwLjAwMCAtLT4gMDA6MDA6MDYuMDk2ClBpeG9yYSB2MC4zLjfvvZwxMiDlvLXmjojmrIrnpLrnr4TlnJbniYfvvJvmqKHlnovoiIfliIbmnpDlt7LpoJDlhYjlrozmiJDjgIIKCjIKMDA6MDA6MDYuMDk2IC0tPiAwMDowMDoxNC43MjIK6Iux5paH6Kqe5oSP5pCc5bCL77ya5pys5qmfIENMSVDvvI9PTk5YIENQVSDmjqjoq5bvvIzkuI3kuIrlgrPlnJbniYfjgIIKCjMKMDA6MDA6MTQuNzIyIC0tPiAwMDowMDoxOS4yNDgK55u45Ly85bqm5piv5om+5ZyW57ea57Si77yM5LiN5piv5YiG6aGe5rqW56K6546H77yb6YCZ5LiN5piv5pWI6IO9IGJlbmNobWFya+OAggoKNAowMDowMDoxOS4yNDggLS0+IDAwOjAwOjI1LjM2NQrpgJnmibkgMTIg5by15ZyW54mH5pyq5b2i5oiQ5Y+v6Z2g576k57WE77yM5L+d55WZ44CM6ZyA5Yik5pa344CN5L6b5Lq65bel5a+p5qC444CCCgo1CjAwOjAwOjI1LjM2NSAtLT4gMDA6MDA6MzMuNzIxCuS6uuW3pemBuOWPluWkquepuuS6uuiIh+eBq+eure+8jOaMh+WumuOAjOWkquepuuaOoue0ouOAje+8m+S4jeaYryBBSSDoh6rli5XliIbpoZ7miJDlip/jgIIKCjYKMDA6MDA6MzMuNzIxIC0tPiAwMDowMDo0MS4zNzcK5YWI6YCQ5qqU6aCQ6Ka977ya5YOF5pCs56e756K66KqN55qEIDIg5by177yb5YW26aSYIDEwIOW8teeVmeW+heWIpOaWt+OAggoKNwowMDowMDo0MS4zNzcgLS0+IDAwOjAwOjQ3Ljc4Nwrnorroqo3lpZfnlKjlvozvvIzlr6bpmpvnp7vli5XmuKzoqabmqpTmoYjvvJvpgJDmqpTmoLjlsI3kvobmupDmtojlpLHjgIHnm67nmoTlnLAgU0hBLTI1NiDnm7jlkIzjgIIKCjgKMDA6MDA6NDcuNzg3IC0tPiAwMDowMDo1NC40NTAK5b6p5Y6f6YCZ5qyh5pON5L2c77yaMiDlvLXlm57liLDljp/kvY3nva7vvIznm67nmoTlnLDkuI3lho3mnInmqpTmoYjvvIzlhaflrrnpm5zmuYrkuIDoh7TjgIIKCjkKMDA6MDA6NTQuNDUwIC0tPiAwMDowMTowMy4wMDAKMTIg5by15ris6Kmm5ZyW5a6M5pW05L+d55WZ77yb56S656+E5YOF6amX6K2J6YCZ5qyh5pON5L2c77yM5LiN6IO95pu/5Luj5Y6f5ZyW5YKZ5Lu944CCCgo=" srclang="zh-TW" label="繁體中文字幕" default>
           您的瀏覽器不支援影片播放，請使用下方影片連結或閱讀文字導覽。
         </video>
-        <figcaption id="demo-caption">v0.3.7 隔離 source build · 無聲影片／繁體中文字幕。連續擷取真實 WebView 畫面，約每秒 5 張；僅剪去片尾停留，未替換 UI 或結果。模型、CPU 分析與初步智慧整理已在錄影前完成。</figcaption>
+        <figcaption id="demo-caption">Pixora v0.3.7 真實操作 · 無聲影片，附繁體中文字幕。</figcaption>
       </figure>
-      <div class="actions"><a class="text-link" href="assets/demo.mp4">開啟 MP4 影片</a><a class="text-link" href="assets/demo.zh-TW.vtt">下載繁體中文字幕（VTT）</a><a class="text-link" href="evidence/capture-provenance.json">來源、授權與 SHA-256 驗證</a></div>
+      <div class="actions" data-reveal><a class="text-link" href="assets/demo.mp4">開啟 MP4 影片</a></div>
       <details class="demo-transcript"><summary>影片文字導覽（不需播放或 JavaScript）</summary><ol>
-        <li><strong>00:00 — 圖庫與搜尋。</strong>12 張公開授權圖片；輸入 <code>a photograph of a cat</code>，顯示真實本機語意搜尋結果。相似度不是分類準確率。</li>
+        <li><strong>00:00 — 圖庫與搜尋。</strong>12 張示範圖片；輸入 <code>a photograph of a cat</code>，顯示本機語意搜尋結果。</li>
         <li><strong>00:19 — 人工審核。</strong>12 張都列在「需判斷」。由人選取太空人與火箭，確認為「太空探索」；其餘 10 張不強行分類。</li>
         <li><strong>00:33 — 逐檔預覽。</strong>核對兩個來源檔名與相對目的地，確認後才套用。</li>
         <li><strong>00:41 — 搬移與復原。</strong>實際搬移 2 個測試檔，再復原到原處。驗證來源消失／目的地出現、復原後位置與 SHA-256 一致；12 張原始內容全部保留。</li>
-      </ol><p>這是小型操作示範，不是辨識準確率 benchmark，也不是百萬張真實圖片驗收。操作復原不能替代原圖備份。</p></details>
+      </ol></details>
     </section>
 
     <section id="features" class="section wrap" aria-labelledby="features-title">
-      <div class="section-heading"><p class="eyebrow">01 / 從找圖到歸檔</p><h2 id="features-title">不只看見圖片。<br>也找得到它的位置。</h2><p>瀏覽、搜尋、整理、復原，連成一條由你掌握的工作流程。</p></div>
+      <div class="section-heading" data-reveal><p class="eyebrow">01 / 從找圖到歸檔</p><h2 id="features-title">不只看見圖片。<br>也找得到它的位置。</h2><p>瀏覽、搜尋、整理、復原，連成一條由你掌握的工作流程。</p></div>
       <div data-tabs class="feature-tabs">
-        <div class="tab-links" aria-label="產品功能"><a id="tab-library" href="#feature-library">01 圖庫瀏覽</a><a id="tab-search" href="#feature-search">02 本機搜尋</a><a id="tab-smart" href="#feature-smart">03 智慧整理</a><a id="tab-recovery" href="#feature-recovery">04 操作復原</a></div>
+        <div class="tab-links" aria-label="產品功能" data-reveal><a id="tab-library" href="#feature-library">01 圖庫瀏覽</a><a id="tab-search" href="#feature-search">02 本機搜尋</a><a id="tab-smart" href="#feature-smart">03 智慧整理</a><a id="tab-recovery" href="#feature-recovery">04 操作復原</a></div>
         <section id="feature-library" class="feature-panel" aria-labelledby="tab-library"><div class="feature-copy"><h3>沿用你熟悉的資料夾。</h3><p>開啟既有資料夾，或建立新的圖庫。用標籤、收藏與星等建立另一種秩序，不必搬動原圖。</p><p class="muted">需要調整位置時，搬移與改名會真正作用於磁碟檔案。</p></div><figure><a class="image-link" data-lightbox href="assets/library.webp"><img src="assets/library.webp" width="1440" height="900" loading="lazy" alt="圖庫中的資料夾樹與圖片縮圖"></a><figcaption>資料夾與分類，各自保留自己的用途。</figcaption></figure></section>
-        <section id="feature-search" class="feature-panel" aria-labelledby="tab-search"><div class="feature-copy"><h3>用畫面的意思，找回圖片。</h3><p>先準備模型、將圖片加入背景分析佇列並等待完成，再在「搜尋方式」選語意搜尋，輸入英文描述，例如 <code>a photograph of a cat</code>。也能從圖片資訊尋找相似圖片。</p><p class="muted">一般文字搜尋比對檔名與相對路徑。語意相似度不是分類正確率。</p></div><figure><a class="image-link" data-lightbox href="assets/search.webp"><img src="assets/search.webp" width="1440" height="900" loading="lazy" alt="本機語意搜尋 a photograph of a cat 的示範結果"></a><figcaption>真實 CPU 推論的英文語意搜尋示範。</figcaption></figure></section>
-        <section id="feature-smart" class="feature-panel" aria-labelledby="tab-smart"><div class="feature-copy"><h3>AI 提出線索，你決定歸處。</h3><p>審核群組、命名分類、指定目的地。不確定的圖片留待判斷，不必為了完成整理而勉強分類。</p><p class="muted">「已確認」仍是等待套用；先看逐檔預覽，才會實際整理。</p></div><figure><a class="image-link" data-lightbox href="assets/review.webp"><img src="assets/review.webp" width="1440" height="900" loading="lazy" alt="智慧整理中確認分類群組與目的地的審核畫面"></a><figcaption>本次由人確認「太空探索」2 張，其餘 10 張留待判斷。</figcaption></figure></section>
-        <section id="feature-recovery" class="feature-panel" aria-labelledby="tab-recovery"><div class="feature-copy"><h3>整理之後，仍有回頭的依據。</h3><p>智慧整理保留跨重啟的操作紀錄，可從「最近操作」復原。檔案狀態不符或原位置被占用時，列出衝突而不是任意覆寫。</p><p class="muted">一般搬移／改名的 Ctrl+Z 僅限本次工作階段；刪除請到 Windows 回收筒。復原不等於原圖備份。</p></div><figure><a class="image-link" data-lightbox href="assets/undo.webp"><img src="assets/undo.webp" width="1440" height="900" loading="lazy" alt="智慧整理復原後的操作結果"></a><figcaption>示範中實際搬移的 2 個檔案已還原。</figcaption></figure></section>
+        <section id="feature-search" class="feature-panel" aria-labelledby="tab-search"><div class="feature-copy"><h3>用畫面的意思，找回圖片。</h3><p>先準備模型、將圖片加入背景分析佇列並等待完成，再在「搜尋方式」選語意搜尋，輸入英文描述，例如 <code>a photograph of a cat</code>。也能從圖片資訊尋找相似圖片。</p><p class="muted">一般文字搜尋比對檔名與相對路徑。</p></div><figure><a class="image-link" data-lightbox href="assets/search.webp"><img src="assets/search.webp" width="1440" height="900" loading="lazy" alt="本機語意搜尋 a photograph of a cat 的示範結果"></a><figcaption>輸入英文描述，找到畫面相符的圖片。</figcaption></figure></section>
+        <section id="feature-smart" class="feature-panel" aria-labelledby="tab-smart"><div class="feature-copy"><h3>AI 提出線索，你決定歸處。</h3><p>審核群組、命名分類、指定目的地。不確定的圖片留待判斷，不必為了完成整理而勉強分類。</p><p class="muted">「已確認」仍是等待套用；先看逐檔預覽，才會實際整理。</p></div><figure><a class="image-link" data-lightbox href="assets/review.webp"><img src="assets/review.webp" width="1440" height="900" loading="lazy" alt="智慧整理中確認分類群組與目的地的審核畫面"></a><figcaption>分類建議與目的地，由你逐項確認。</figcaption></figure></section>
+        <section id="feature-recovery" class="feature-panel" aria-labelledby="tab-recovery"><div class="feature-copy"><h3>整理之後，仍有回頭的依據。</h3><p>智慧整理保留跨重啟的操作紀錄，可從「最近操作」復原。檔案狀態不符或原位置被占用時，列出衝突而不是任意覆寫。</p><p class="muted">一般搬移／改名的 Ctrl+Z 僅限本次工作階段；刪除請到 Windows 回收筒。復原不等於原圖備份。</p></div><figure><a class="image-link" data-lightbox href="assets/undo.webp"><img src="assets/undo.webp" width="1440" height="900" loading="lazy" alt="智慧整理復原後的操作結果"></a><figcaption>整理結果一目了然，需要時可復原。</figcaption></figure></section>
       </div>
     </section>
 
     <section id="guide" class="section guide-section" aria-labelledby="guide-title"><div class="wrap">
-      <div class="section-heading"><p class="eyebrow">02 / 第一次使用</p><h2 id="guide-title">先從一個小資料夾開始。</h2><p>先備份原圖，用少量圖片熟悉流程。基本瀏覽不需準備 AI。</p></div>
-      <div class="setup-layout"><ol class="setup-list"><li><h3>安裝，或完整解壓縮</h3><p>安裝版選 <code>*-setup.exe</code>；免安裝版選 <code>*-portable.zip</code>，完整解壓並保留 <code>analysis</code> 資料夾，再開啟 <code>Pixora.exe</code>。不需另裝 Python、Rust 或 Node.js。</p></li><li><h3>建立圖庫，或開啟既有資料夾</h3><p>只索引你登錄的圖庫，原圖留在所選資料夾。雙擊圖片可預覽；標籤不改變檔案位置。</p></li><li><h3>準備本機模型</h3><p>v0.3.7 的入口是「設定 → 本機 AI 與運算裝置」。第一次下載模型需要網路，備齊後可離線推論。GPU 加速是選配，無 GPU 也可使用 CPU。</p></li><li><h3>建立搜尋資料</h3><p>若要語意／相似圖片搜尋，在同頁「背景分析佇列」選範圍，按「加入分析佇列」，等待完成再搜尋。模型就緒不代表圖片已完成分析；背景分析不搬檔。</p></li></ol><figure><a class="image-link" data-lightbox href="assets/setup.webp"><img src="assets/setup.webp" width="1390" height="1200" loading="lazy" alt="設定中的本機 AI 與運算裝置，可準備模型和運算套件"></a><figcaption>模型與裝置設定 · v0.3.7</figcaption></figure></div>
-      <div class="tour-heading"><div><p class="eyebrow">智慧整理 / 四步導覽</p><h3>每一步，都看清楚再往前。</h3></div><p class="muted">以下是畫面導覽，不會在網頁執行 AI 或變更檔案。</p></div>
+      <div class="section-heading" data-reveal><p class="eyebrow">02 / 第一次使用</p><h2 id="guide-title">先從一個小資料夾開始。</h2><p>先備份原圖，用少量圖片熟悉流程。基本瀏覽不需準備 AI。</p></div>
+      <div class="setup-layout"><ol class="setup-list" data-reveal-group><li data-reveal><h3>安裝，或完整解壓縮</h3><p>安裝版選 <code>*-setup.exe</code>；免安裝版選 <code>*-portable.zip</code>，完整解壓並保留 <code>analysis</code> 資料夾，再開啟 <code>Pixora.exe</code>。不需另裝 Python、Rust 或 Node.js。</p></li><li data-reveal><h3>建立圖庫，或開啟既有資料夾</h3><p>只索引你登錄的圖庫，原圖留在所選資料夾。雙擊圖片可預覽；標籤不改變檔案位置。</p></li><li data-reveal><h3>準備本機模型</h3><p>v0.3.7 的入口是「設定 → 本機 AI 與運算裝置」。第一次下載模型需要網路，備齊後可離線推論。GPU 加速是選配，無 GPU 也可使用 CPU。</p></li><li data-reveal><h3>建立搜尋資料</h3><p>若要語意／相似圖片搜尋，在同頁「背景分析佇列」選範圍，按「加入分析佇列」，等待完成再搜尋。模型就緒不代表圖片已完成分析；背景分析不搬檔。</p></li></ol><figure data-reveal><a class="image-link" data-lightbox href="assets/setup.webp"><img src="assets/setup.webp" width="1390" height="1200" loading="lazy" alt="設定中的本機 AI 與運算裝置，可準備模型和運算套件"></a><figcaption>模型與裝置設定 · v0.3.7</figcaption></figure></div>
+      <div class="tour-heading" data-reveal><div><p class="eyebrow">智慧整理 / 四步導覽</p><h3>每一步，都看清楚再往前。</h3></div><p class="muted">以下是畫面導覽，不會在網頁執行 AI 或變更檔案。</p></div>
       <div data-tour>
-        <nav class="tour-steps" aria-label="智慧整理步驟"><a href="#tour-scope">01 <span>選範圍</span></a><a href="#tour-review">02 <span>審核</span></a><a href="#tour-preview">03 <span>預覽</span></a><a href="#tour-completed">04 <span>完成與復原</span></a></nav>
+        <nav class="tour-steps" aria-label="智慧整理步驟" data-reveal><a href="#tour-scope">01 <span>選範圍</span></a><a href="#tour-review">02 <span>審核</span></a><a href="#tour-preview">03 <span>預覽</span></a><a href="#tour-completed">04 <span>完成與復原</span></a></nav>
         <article class="tour-panel" id="tour-scope"><div><span class="step-number">01 / 04</span><h4>決定整理的範圍與方式</h4><p>選擇要整理的圖片、資料夾與保留集合。可以整理到資料夾，也可以只建立分類標籤。</p></div><figure><a class="image-link" data-lightbox href="assets/scope.webp"><img src="assets/scope.webp" width="1450" height="700" loading="lazy" alt="智慧整理第一步：選範圍與整理方式"></a><figcaption>先定義這次要處理什麼。</figcaption></figure></article>
         <article class="tour-panel" id="tour-review"><div><span class="step-number">02 / 04</span><h4>確認分類與歸處</h4><p>審核群組、調整命名與目的地，再明確確認。不確定的內容可稍後處理；這一步不會搬動檔案。</p></div><figure><a class="image-link" data-lightbox href="assets/review.webp"><img src="assets/review.webp" width="1440" height="900" loading="lazy" alt="智慧整理第二步：人工確認分類與歸處"></a><figcaption>建議不直接等於你的決定。</figcaption></figure></article>
         <article class="tour-panel" id="tour-preview"><div><span class="step-number">03 / 04</span><h4>先預覽，再按下套用</h4><p>核對搬移數量、保留原處的圖片及逐檔目的地。只加標籤也先預覽；確認實際影響後才套用。</p></div><figure><a class="image-link" data-lightbox href="assets/preview.webp"><img src="assets/preview.webp" width="1440" height="900" loading="lazy" alt="智慧整理第三步：逐檔檢查預覽計畫"></a><figcaption>以最後的逐檔預覽為準。</figcaption></figure></article>
-        <article class="tour-panel" id="tour-completed"><div><span class="step-number">04 / 04</span><h4>查看結果，需要時復原</h4><p>完成後查看實際執行結果。可立即復原，也能從「最近操作」找到跨重啟保存的紀錄；有衝突時不強行覆寫。</p><a class="text-link" data-lightbox href="assets/undo.webp" data-caption="智慧整理復原結果：實際搬移的 2 個檔案已還原">查看復原畫面 <span aria-hidden="true">↗</span></a></div><figure><a class="image-link" data-lightbox href="assets/completed.webp"><img src="assets/completed.webp" width="1440" height="900" loading="lazy" alt="智慧整理第四步：完成後顯示實際結果與復原操作"></a><figcaption>本次示範實際搬移、再還原 2 個檔案。</figcaption></figure></article>
+        <article class="tour-panel" id="tour-completed"><div><span class="step-number">04 / 04</span><h4>查看結果，需要時復原</h4><p>完成後查看實際執行結果。可立即復原，也能從「最近操作」找到跨重啟保存的紀錄；有衝突時不強行覆寫。</p><a class="text-link" data-lightbox href="assets/undo.webp" data-caption="智慧整理復原結果：實際搬移的 2 個檔案已還原">查看復原畫面 <span aria-hidden="true">↗</span></a></div><figure><a class="image-link" data-lightbox href="assets/completed.webp"><img src="assets/completed.webp" width="1440" height="900" loading="lazy" alt="智慧整理第四步：完成後顯示實際結果與復原操作"></a><figcaption>完成後可查看結果或復原。</figcaption></figure></article>
         <div class="tour-controls" hidden><p class="tour-status" aria-live="polite" aria-atomic="true"></p><div><button type="button" data-previous>← 上一步</button><button type="button" data-next>下一步 →</button></div></div>
       </div>
     </div></section>
 
-    <section id="engineering" class="section wrap" aria-labelledby="engineering-title"><div class="section-heading"><p class="eyebrow">03 / ENGINEERING · 給想看更深一層的你</p><h2 id="engineering-title">把辨識能力，放進可靠的流程。</h2><p>工程的重點不只在找到相似圖片，也在本機資源、可追溯狀態與檔案安全之間取得平衡。</p></div>
-      <div class="engineering-layout"><div><h3>從像素到可審核的建議</h3><ol class="pipeline"><li><strong>CLIP + ONNX</strong><span>圖片／文字編碼為向量，本機推論；GPU 優先，失敗可回到 CPU。</span></li><li><strong>USearch / HNSW + SQLite</strong><span>近似最近鄰搜尋與圖片 ID 對應。索引可重建，管理資料與原圖分開。</span></li><li><strong>PCA + HDBSCAN → 人工審核</strong><span>降維與未知內容群聚提供整理線索；不足或不確定的內容不強制分類。</span></li></ol></div><div class="engineering-notes"><h3>不把檔案安全留給運氣</h3><p>React／TypeScript 呈現桌面介面，Rust 協調檔案、資料庫與推論。內容雜湊搭配模型／前處理版本識別快取，避免誤用舊特徵。</p><p>預覽計畫綁定版本；操作前核對，操作後留存日誌。復原遇到檔案變更或目的地衝突時保留現況，回報原因。</p><p class="muted">智慧整理仍需人工判斷。完整百萬張真實圖片的端到端產品效能驗收尚未完成。</p></div></div>
-      <aside class="benchmark" aria-labelledby="benchmark-title"><div><p class="eyebrow">歷史核心量測 / 2026-09-17</p><h3 id="benchmark-title">100 萬筆合成向量，不是 100 萬張實圖驗收。</h3><p>512 維合成向量；僅量測 <strong>ANN 搜尋 + SQLite ID lookup</strong>，不含模型推論與 UI。Recall@50 是對精確向量搜尋的召回率，<strong>不是圖片分類正確率</strong>，也不是實際百萬圖片應用的驗證。</p><p class="micro">Windows 11 · Ryzen 7 9800X3D · 約 32 GiB RAM · 4 threads · 200 queries</p><a class="text-link" href="evidence/benchmark-1000000.json">檢視量測 JSON <span aria-hidden="true">↗</span></a></div><dl><div><dt>查詢延遲 p95</dt><dd>4.5709 <small>ms</small></dd></div><div><dt>ANN Recall@50</dt><dd>98.15 <small>%</small></dd></div></dl></aside>
+    <section id="engineering" class="section wrap" aria-labelledby="engineering-title"><div class="section-heading" data-reveal><p class="eyebrow">03 / ENGINEERING · 給想看更深一層的你</p><h2 id="engineering-title">把辨識能力，放進可靠的流程。</h2><p>工程的重點不只在找到相似圖片，也在本機資源、可追溯狀態與檔案安全之間取得平衡。</p></div>
+      <div class="engineering-layout"><div data-reveal><h3>從像素到可審核的建議</h3><ol class="pipeline" data-reveal-group><li data-reveal><strong>CLIP + ONNX</strong><span>圖片／文字編碼為向量，本機推論；GPU 優先，失敗可回到 CPU。</span></li><li data-reveal><strong>USearch / HNSW + SQLite</strong><span>近似最近鄰搜尋與圖片 ID 對應。索引可重建，管理資料與原圖分開。</span></li><li data-reveal><strong>PCA + HDBSCAN → 人工審核</strong><span>降維與未知內容群聚提供整理線索；不足或不確定的內容不強制分類。</span></li></ol></div><div class="engineering-notes" data-reveal><h3>不把檔案安全留給運氣</h3><p>React／TypeScript 呈現桌面介面，Rust 協調檔案、資料庫與推論。內容雜湊搭配模型／前處理版本識別快取，避免誤用舊特徵。</p><p>預覽計畫綁定版本；操作前核對，操作後留存日誌。復原遇到檔案變更或目的地衝突時保留現況，回報原因。</p></div></div>
     </section>
 
-    <section id="faq" class="section wrap faq-layout" aria-labelledby="faq-title"><div class="section-heading"><p class="eyebrow">04 / 常見問題</p><h2 id="faq-title">使用之前，<br>先說清楚。</h2></div><div class="faq-list">
-      <details><summary>圖片會上傳嗎？一定要連網嗎？</summary><p>圖片不會上傳做 AI 推論。第一次下載模型與選用的 GPU 套件需要網路；模型備齊後可離線推論。這個產品網站也不提供上傳、不執行 AI，沒有追蹤腳本。</p></details>
-      <details><summary>沒有 GPU 能用嗎？需要安裝什麼？</summary><p>可以使用 CPU，GPU／DirectML 加速為選配。需要 Windows x64 與 WebView2 Runtime，已測試 Windows 11。不需另裝 Python、Rust 或 Node.js；免安裝版務必完整解壓縮並保留 analysis 資料夾。</p></details>
-      <details><summary>語意搜尋可以輸入中文嗎？</summary><p>目前請使用英文描述，例如 a photograph of a cat。搜尋前，請先在設定的「背景分析佇列」加入圖片並等待分析完成；只下載模型還不夠。一般文字搜尋仍可比對檔名與相對路徑。相似度只提供找圖線索，不代表分類準確率。</p></details>
-      <details><summary>整理會真的搬動原始檔案嗎？</summary><p>會。搬移與改名作用於真實資料夾；單純標籤、收藏和星等不改變位置。智慧整理先審核、預覽，經確認套用後才執行。請先備份原圖並用小範圍測試。</p></details>
-      <details><summary>復原與備份有什麼不同？</summary><p>一般搬移／改名的 Ctrl+Z 僅限本次工作階段；智慧整理的復原紀錄可跨程式重啟，遇到變更或衝突會停止覆寫。刪除請從 Windows 回收筒還原。</p><p>「設定 → 圖庫維護與備份」匯出的是管理資料，<strong>不包含原始圖片</strong>，也不能替代原圖備份或完整的操作復原紀錄。</p></details>
-      <details><summary>下載有安全警示，或遇到操作問題？</summary><p>請確認檔案來自此公開下載儲存庫的 Releases，核對版本及警示內容，不要停用安全保護。可到 <a href="https://github.com/LiuTouo/Pixora-releases/issues">Issues</a> 提供版本、重現步驟與錯誤訊息；截圖與紀錄請先遮蔽私人圖片、路徑及個人資訊。</p></details>
+    <section id="faq" class="section wrap faq-layout" aria-labelledby="faq-title"><div class="section-heading" data-reveal><p class="eyebrow">04 / 常見問題</p><h2 id="faq-title">使用之前，<br>先說清楚。</h2></div><div class="faq-list">
+      <details data-reveal><summary>圖片會上傳嗎？一定要連網嗎？</summary><p>圖片不會上傳做 AI 推論。第一次下載模型與選用的 GPU 套件需要網路；模型備齊後可離線推論。這個產品網站也不提供上傳、不執行 AI，沒有追蹤腳本。</p></details>
+      <details data-reveal><summary>沒有 GPU 能用嗎？需要安裝什麼？</summary><p>可以使用 CPU，GPU／DirectML 加速為選配。需要 Windows x64 與 WebView2 Runtime，已測試 Windows 11。不需另裝 Python、Rust 或 Node.js；免安裝版務必完整解壓縮並保留 analysis 資料夾。</p></details>
+      <details data-reveal><summary>語意搜尋可以輸入中文嗎？</summary><p>目前請使用英文描述，例如 a photograph of a cat。搜尋前，請先在設定的「背景分析佇列」加入圖片並等待分析完成；只下載模型還不夠。一般文字搜尋仍可比對檔名與相對路徑。</p></details>
+      <details data-reveal><summary>整理會真的搬動原始檔案嗎？</summary><p>會。搬移與改名作用於真實資料夾；單純標籤、收藏和星等不改變位置。智慧整理先審核、預覽，經確認套用後才執行。請先備份原圖並用小範圍測試。</p></details>
+      <details data-reveal><summary>復原與備份有什麼不同？</summary><p>一般搬移／改名的 Ctrl+Z 僅限本次工作階段；智慧整理的復原紀錄可跨程式重啟，遇到變更或衝突會停止覆寫。刪除請從 Windows 回收筒還原。</p><p>「設定 → 圖庫維護與備份」匯出的是管理資料，<strong>不包含原始圖片</strong>，也不能替代原圖備份或完整的操作復原紀錄。</p></details>
+      <details data-reveal><summary>下載有安全警示，或遇到操作問題？</summary><p>請確認檔案來自此公開下載儲存庫的 Releases，核對版本及警示內容，不要停用安全保護。可到 <a href="https://github.com/LiuTouo/Pixora-releases/issues">Issues</a> 提供版本、重現步驟與錯誤訊息；截圖與紀錄請先遮蔽私人圖片、路徑及個人資訊。</p></details>
     </div></section>
 
-    <section id="download" class="download-section wrap" aria-labelledby="download-title"><p class="eyebrow">開始整理 / 保留你的掌控權</p><h2 id="download-title">下一次找圖，<br>不用再從頭翻起。</h2><p>先選一個已備份的資料夾，讓 Pixora 陪你理出頭緒。</p><div class="actions"><a class="button primary" href="https://github.com/LiuTouo/Pixora-releases/releases/latest">下載 Windows 版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="https://github.com/LiuTouo/Pixora-releases/issues">回報問題</a></div><p class="micro">安裝版 *-setup.exe / 免安裝版 *-portable.zip<br>說明與畫面已核對 v0.3.7；下載連結前往最新發行版。</p></section>
+    <section id="download" class="download-section wrap" data-reveal-group aria-labelledby="download-title"><p class="eyebrow" data-reveal>開始整理 / 保留你的掌控權</p><h2 id="download-title" data-reveal>下一次找圖，<br>不用再從頭翻起。</h2><p data-reveal>先選一個已備份的資料夾，讓 Pixora 陪你理出頭緒。</p><div class="actions" data-reveal><a class="button primary" href="https://github.com/LiuTouo/Pixora-releases/releases/latest">下載 Windows 版 <span aria-hidden="true">↗</span></a><a class="button secondary" href="https://github.com/LiuTouo/Pixora-releases/issues">回報問題</a></div><p class="micro">安裝版 *-setup.exe / 免安裝版 *-portable.zip<br>說明與畫面已核對 v0.3.7；下載連結前往最新發行版。</p></section>
 
-    <section class="sources wrap" aria-labelledby="sources-title"><h2 id="sources-title">畫面與素材來源</h2><p>畫面來自 v0.3.7 同版本的隔離 debug 測試建置，內嵌 production 前端並以 CDP 擷取，非未發行的新介面。以真實 CPU 推論展示 12 張不同圖片，人工確認後實際搬移並復原 2 個檔案，以 SHA-256 核對內容。智慧整理初步結果為 12 張需判斷，並非自動分類成功；這是小型操作示範，不是辨識準確率 benchmark。<a href="evidence/capture-provenance.json">查看擷取紀錄</a>。</p><p>12 張示範素材重用 <a href="https://scikit-image.org/docs/stable/api/skimage.data.html">scikit-image data</a> v0.25.2 的 CC0／公有領域圖片，涵蓋動物、咖啡、攝影師、太空人、火箭、星系、時鐘與材質；未以複製或裁切變體增加數量。<a href="evidence/capture-provenance.json">逐張作者、授權依據、來源及雜湊</a>均留存於擷取紀錄。Pixora 品牌圖像使用提供的原始素材。</p></section>
+    <section class="sources wrap" aria-labelledby="sources-title"><details class="sources-details"><summary><h2 id="sources-title">素材、驗證與量測範圍</h2></summary><div class="sources-body"><p>本站畫面與影片來自 v0.3.7 同版本的隔離測試建置，內嵌 production 前端並以 CDP 擷取，非未發行的新介面。以真實 CPU 推論展示 12 張不同圖片；智慧整理初步結果皆需人工判斷，由人選取太空人與火箭確認「太空探索」，並非宣稱自動分類成功。實際搬移並復原 2 個檔案，以 SHA-256 核對內容與位置。這是小型操作示範，不是辨識準確率 benchmark，也不是百萬張真實圖片的端到端驗收；操作復原不能替代原圖備份。<a href="evidence/capture-provenance.json">查看擷取紀錄、逐張來源授權與驗證</a>。</p><p>12 張示範素材重用 <a href="https://scikit-image.org/docs/stable/api/skimage.data.html">scikit-image data</a> v0.25.2 的 CC0／公有領域圖片，涵蓋動物、咖啡、攝影師、太空人、火箭、星系、時鐘與材質；未以複製或裁切變體增加數量。Pixora 品牌圖像使用提供的原始素材。</p><p>歷史核心量測（2026-09-17）以 512 維合成向量量測 100 萬筆「ANN 搜尋 + SQLite ID lookup」，不含模型推論與 UI；Recall@50 是對精確向量搜尋的召回率，不是圖片分類正確率，也不是實際百萬圖片應用的驗證。完整百萬張真實圖片的端到端產品效能驗收尚未完成。<a href="evidence/benchmark-1000000.json">檢視量測 JSON</a>。</p><p class="micro">量測環境：Windows 11 · Ryzen 7 9800X3D · 約 32 GiB RAM · 4 threads · 200 queries</p><p>示範影片字幕可另行下載：<a href="assets/demo.zh-TW.vtt">繁體中文字幕（VTT）</a>。</p></div></details></section>
   </main>
   <footer class="site-footer wrap"><a class="brand" href="#">Pixora</a><p>讓每張圖片，各得其所。</p><a href="https://github.com/LiuTouo/Pixora-releases">公開下載儲存庫 <span aria-hidden="true">↗</span></a></footer>
   <dialog id="lightbox" aria-labelledby="lightbox-caption"><div class="dialog-toolbar"><p id="lightbox-caption"></p><button type="button" data-close autofocus>關閉 <span aria-hidden="true">×</span></button></div><img width="1440" height="900" alt=""></dialog>

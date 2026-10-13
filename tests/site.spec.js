@@ -108,7 +108,9 @@ test('FAQ works with mouse and keyboard; downloads and metadata are correct', as
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://liutouo.github.io/Pixora-releases/');
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\/Pixora-releases\/assets\/pixora-cover\.webp$/);
-  await expect(page.locator('#engineering')).toContainText('不是圖片分類正確率');
+  await expect(page.locator('#engineering')).toContainText('USearch');
+  await expect(page.locator('.sources')).toContainText('不是圖片分類正確率');
+  await expect(page.locator('.sources a[href="evidence/benchmark-1000000.json"]')).toHaveCount(1);
   const anchors = await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => href !== '#'));
   for (const anchor of anchors) await expect(page.locator(anchor)).toHaveCount(1);
 });
@@ -162,7 +164,8 @@ for (const width of [375, 768, 1280, 1920]) {
     await expectNoOverflow(page);
     await page.getByRole('tab').first().click();
     await page.locator('.tour-steps a').first().click();
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.evaluate(() => document.querySelectorAll('[data-reveal]').forEach(element => { element.style.transition = 'none'; element.classList.add('revealed'); }));
     await page.screenshot({ path: testInfo.outputPath(`site-${width}.png`), fullPage: true });
     await page.screenshot({ path: testInfo.outputPath(`hero-${width}.png`) });
     expect(errors).toEqual([]);
@@ -198,6 +201,24 @@ test('direct links reveal enhanced panels', async ({ page }) => {
   await expect(page.locator('#feature-search')).toBeVisible();
   await page.evaluate(() => { location.hash = 'tour-preview'; });
   await expect(page.locator('#tour-preview')).toBeVisible();
+});
+
+test('scroll reveals settle visible for every motion preference', async ({ page }) => {
+  await page.goto(site);
+  const reveals = page.locator('[data-reveal]');
+  expect(await reveals.count()).toBeGreaterThan(10);
+  // A single jump never renders intermediate positions, so IntersectionObserver
+  // legitimately skips mid-page elements. Scroll through like a real user.
+  await page.evaluate(async () => {
+    for (let y = 0; y <= document.documentElement.scrollHeight; y += 400) {
+      window.scrollTo({ top: y, behavior: 'instant' });
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  });
+  await expect.poll(() => reveals.evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1'))).toBe(true);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(site);
+  await expect.poll(() => reveals.evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1'))).toBe(true);
 });
 
 test('relative assets and evidence work under /Pixora-releases/ HTTP subpath', async ({ page }) => {
@@ -310,14 +331,17 @@ test('relative assets and evidence work under /Pixora-releases/ HTTP subpath', a
   }
 });
 
-test('benchmark values remain contained at 200% text on mobile', async ({ page }, testInfo) => {
+test('footer provenance details stay collapsed and contained at 200% text', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 1000 });
   await page.goto(site);
   await page.addStyleTag({ content: ':root { font-size: 200%; }' });
-  const benchmark = page.locator('.benchmark');
-  expect(await benchmark.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-  for (const value of await benchmark.locator('dd').all()) {
-    expect(await value.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const sources = page.locator('.sources');
+  await expect(sources.locator('.sources-body')).toBeHidden();
+  await sources.locator('summary').click();
+  await expect(sources.locator('.sources-body')).toBeVisible();
+  expect(await sources.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  for (const link of await sources.locator('a').all()) {
+    expect(await link.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   }
-  await benchmark.screenshot({ path: testInfo.outputPath('benchmark-375-text200.png') });
+  await sources.screenshot({ path: testInfo.outputPath('sources-375-text200.png') });
 });
