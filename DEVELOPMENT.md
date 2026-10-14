@@ -1,18 +1,26 @@
 # Public site maintenance
 
-The site is plain HTML, CSS and a classic deferred script under `docs/`, plus a vendored copy of GSAP and ScrollTrigger in `docs/vendor/` (installed from the `gsap` npm dependency; no CDN, no external requests at runtime). There is no build step, backend or API request beyond that. Product instructions belong in the Traditional Chinese README and site, not here.
+The showcase is plain HTML, CSS and a classic deferred script under `docs/`, with vendored GSAP and ScrollTrigger in `docs/vendor/`. There is no build step, backend, runtime CDN, remote inference or external runtime request. Product instructions belong in the Traditional Chinese README and site, not here.
 
 ## Preview and test
 
-Open `docs/index.html` in a browser; local file URLs are supported. All assets use relative paths so the same site works under `/Pixora-releases/`.
+Open `docs/index.html` directly in a browser. Relative assets also support GitHub Pages under `/Pixora-releases/`.
 
 ```sh
 npm ci
 npx playwright install chromium
 npm test
+
+# Cross-engine validation
+npx playwright install firefox webkit
+npx playwright test --browser=all --workers=3
 ```
 
-`@playwright/test` is the development dependency; `gsap` is fetched only to vendor its minified files into `docs/vendor/` (update by reinstalling and copying again). Tests open the local HTML by default. To check an already deployed site, set `SITE_URL` to its full public URL, including the trailing slash:
+`@playwright/test` is a development dependency. The `gsap` dependency supplies the vendored minified files; the website never imports from `node_modules`. Preserve the vendor files' LF endings when updating them.
+
+Tests normally start a Node standard-library HTTP server per worker. This makes blocked-script tests reliable across browsers: Firefox does not reliably intercept `file://` scripts through Playwright routing. Separate tests cover direct file viewing and no-JavaScript file viewing. No server package or manual startup is needed.
+
+To test a deployed site, set `SITE_URL` to the full public URL, including its trailing slash:
 
 ```sh
 SITE_URL=https://liutouo.github.io/Pixora-releases/ npm test
@@ -26,32 +34,78 @@ npm test
 Remove-Item Env:SITE_URL
 ```
 
-Tests cover the pinned scroll choreography, the interactive fallback lab, the opening intro, keyboard access, focus preservation, deep links, no-JavaScript and blocked-script reading, blocked-GSAP fallback, missing animation APIs, image loading, the hero image trail, subpath hosting, viewport changes and enlarged text. The subpath test also verifies native video playback/seeking, captions and every media hash in the capture provenance; its local HTTP server supports byte ranges. The caption track embeds the same downloadable VTT as a data URL so direct file viewing does not trigger cross-origin track errors; update both copies together (the test checks equality). A Node standard-library HTTP server exists only inside the subpath test; no server package or separate startup is needed. Viewport screenshots are written into the ignored `test-results/` directory. Inspect desktop and mobile output after layout changes; automated overflow checks do not replace visual review.
+The media-provenance test always serves the local assets under `/Pixora-releases/`. Its server supports byte ranges and verifies playback, seeking, captions and published media hashes. WebKit can honor a native preference that initially disables captions; the test explicitly enables the native text track before checking cues. Ordinary screenshot links may display the image or download it, depending on the browser.
 
-## Four-act structure
+Tests cover actual motion under both OS motion preferences and live preference changes; named timeline chapters and reverse scrolling; pause persistence and storage failure; independent manual state; keyboard focus/caret preservation; rapid switching; responsive layout and 200% text; cold deep links, aliases and browser history; no-JavaScript/blocked-script/missing-API fallbacks; failed images; parallax pause/resume; and cancellation of offscreen replay. On Windows, the viewport helper compensates for WebKit applying desktop DPI scaling to requested dimensions. Overflow checks tolerate one CSS pixel of layout rounding, not content overflow.
 
-The page is four acts: hero (asymmetric split with the library window, mouse parallax, image trail and magnetic CTAs), a principles marquee band (CSS-only, one per page, duplicated copy is `aria-hidden` with an `sr-only` static list), the interactive re-enactment (`#features`), and the evidence act (`#demo`: 63-second video, real-screenshot scroll-snap strip, transcript) ending in the download CTA (`#download`). The FAQ and first-use guide sections were removed; their content lives in the README and is linked from the download act. `#guide`, `#faq` and `#tour-scope` remain as anchor aliases pointing at the download act so old links keep working.
+Screenshots and traces are written into ignored test-output directories. Inspect desktop and mobile screenshots after layout changes; automated assertions do not replace visual review or real-device testing.
 
-## Interactive lab: cinema and interactive modes
+## Four-act “影像歸途” structure
 
-The `#features` section is the five-step re-enactment of the recorded v0.3.7 operation: library, semantic search, manual selection and confirmation, per-file preview, then apply and undo. All states, counts and the recorded query (`a photograph of a cat`, cat result first, astronaut.png + rocket.jpg into 太空探索) come from `capture-provenance.json`; copy must not claim automatic classification accuracy, and the lab clearly states it never touches the visitor's files.
+1. **Photos first.** The headline and Windows download CTA are immediately usable, surrounded by the twelve real sample photos. There is no blocking intro, scroll lock, image trail, marquee, fake app window or generated product screenshot.
+2. **One continuous journey (`#features`).** The same twelve `.photo-actor` elements reorganize into the library, demonstrate the recorded search, return to the complete library, then follow human selection, per-file preview, application and undo. “自己試一次” opens the separate manual lab.
+3. **Real evidence (`#demo`).** The user-initiated 63-second v0.3.7 recording, native captions, scrollable screenshot filmstrip, lightbox and transcript remain real evidence, clearly distinguished from the re-enactment.
+4. **Download (`#download`).** A concluding photo composition, Windows download link, README guide, privacy/undo notes, issue reporting and attribution. The old long guide and FAQ are not reintroduced.
 
-**Cinema mode** (viewport at least 900px wide and 700px tall with GSAP loaded): the lab frame pins and a scrubbed GSAP timeline maps scroll progress to the five scenes — cards settle, the query types itself, the cat is highlighted, the two recorded files are checked, the preview rows slide in, the cards fly into the folder and undo. Scene state is deterministic from scroll progress (transform/opacity only; measured flight offsets are function-based with `invalidateOnRefresh`), so scrolling backwards replays cleanly. The step rail doubles as ARIA tabs; clicking a rail link smooth-scrolls the stage and pushes the scene hash. `重新體驗` scrolls back to the start.
+The recorded search is `a photograph of a cat`, with `chelsea.png` as the leading result. Only after returning to the complete library does the operator select `astronaut.png` and `rocket.jpg`, naming the group `太空探索`. These are not cat-search results or automatically accepted classifications. Confirmation does not move files. The preview lists both source/destination paths; applying and undoing affect exactly two sample files. The demo never accesses visitor files or performs AI inference.
 
-**Interactive mode** (smaller viewports, blocked GSAP, or missing animation APIs): the previous tabbed lab — manual search with FLIP reorder, card selection, confirmation driving the preview, apply/undo with flight animations, and the `自動演出` re-enactment. Mode switches rebuild on breakpoint change and restore the recorded initial state.
+## Three presentation modes
 
-Without JavaScript all five scenes remain ordinary readable sections; `.no-js` CSS hides interactive-only controls. Hidden scenes stay measurable but inert and excluded from the accessibility tree once enhanced (`.lab-ready`). The owner decision on motion now distinguishes: user-driven scrub choreography stays on for every visitor (it is tied to the scrollbar), while autonomous motion — the opening intro, marquee scroll and the hero image trail — pauses for `prefers-reduced-motion` and degrades to instant states when animation APIs are missing.
+### Cinema
 
-The opening intro is a GSAP remount of the card-convergence: twelve CC0 sample thumbnails fly in, settle into a grid, converge into the app mark, then hand off to the hero. It runs with animation support, a visible tab and a viewport at least 420px wide; any pointer, key, wheel or `pixora:skip-intro` event finishes it instantly, and a timer caps it near 2.4s. Scroll is locked only while the overlay exists. Reveals (`[data-reveal]`) stay hidden until the intro finishes (`motion-ready`).
+With GSAP/ScrollTrigger, full site motion, a viewport at least 900px wide and 700px tall, and content that fits the stage, `.journey-pin` pins for approximately 5.5 viewport heights. The outer element owns pinning, `.photo-actor` owns story transforms, `.photo-field` owns small pointer parallax, and `.photo-drift` owns decorative breathing. Text and CTAs do not follow the pointer.
 
-Feature hash links are retained. `#feature-library`…`#feature-recovery` select lab scenes 1–5 (cinema mode scrolls the pinned stage to them); `#tour-review`, `#tour-preview` and `#tour-completed` alias scenes 3–5; `#tour-scope`, `#guide` and `#faq` point at the download act. Engineering notes and evidence links live in README. Passive scrolling does not add browser history entries; step activation does.
+Both the GSAP timeline and ScrollTrigger have ID `image-journey`. Use their named labels—`hero`, `library`, `search`, `return-library`, `selection`, `preview`, `recovery`, `applied`, `undone`—for tests and navigation. Do not assume the first registered trigger is this one or divide progress into five equal segments.
 
-Keep captions focused on the actual user actions, without implementation or benchmark commentary. Caption edits require synchronizing the inline track, downloadable VTT and its `published_files` byte count/hash in `docs/evidence/capture-provenance.json`; record the editorial change under `video.caption_editing`. `.gitattributes` keeps VTT line endings at LF so Windows checkout does not invalidate their byte hashes. Do not change capture facts or original media to make the demo appear more capable. The original video is low-frame-rate and stays user-initiated, never a looping backdrop.
+Semantic chapter state, `inert`, ARIA, typed query and folder counts synchronize with actual timeline time, not only raw scroll progress. Synchronization also runs on refresh because GSAP can suppress animation callbacks while refreshing. A newly created timeline-backed trigger is explicitly refreshed before label-to-scroll routing uses its measurements.
 
-## GitHub Pages
+### Readable story
 
-The intended Pages setting is **Deploy from a branch → main → /docs** at `https://liutouo.github.io/Pixora-releases/`. No custom workflow is needed. `docs/.nojekyll` keeps this a static site. Changing Pages settings or publishing is a separate, explicitly authorized action; the test command does neither.
+Narrow/short viewports, enlarged content that no longer fits, paused site motion, or missing GSAP use native unpinned chapter flow. All five chapters remain readable. Their illustrations are independent of the live form, so changing manual selections never rewrites the recorded story. With motion enabled, CSS drift, entrance effects and scroll reveals still work without GSAP. The top mode control and bottom outro both provide entry to the manual lab.
 
-Keep every download CTA pointed at `https://github.com/LiuTouo/Pixora-releases/releases/latest`, never at a versioned installer asset. The guide and screenshots are verified against v0.3.7. Recheck UI labels, supported behavior and screenshot provenance together when updating them. Do not publish private source, local paths or user data.
+### Manual interaction
 
-Supplied screenshots and `docs/evidence/` are public evidence, not test output. Do not replace their contents with fabricated UI or results. Benchmark copy must retain the synthetic-vector scope, environment and exclusions. Keep generated browser artifacts, dependency directories and local tooling indexes out of Git.
+Manual mode is explicitly selected, not forced by a breakpoint. It provides search, keyboard/mouse selection, category naming and confirmation, per-file preview, apply, undo, reset and a cancellable automatic replay. Unsupported search text is clearly identified as using the one recorded example, not new inference. Category text is rendered with `textContent`.
+
+Selection/name changes invalidate confirmation and prevent stale plans from being applied. The form's selected files, query, name, confirmation, operation state and current step survive resizing, pause/resume and visits to cinema. Rebuilding the same manual chapter must preserve the focused input and caret. Moving to a different chapter transfers focus out of the hidden panel.
+
+Automatic replay has one cancellable timer chain. User interaction, leaving the lab, backgrounding the document, pausing or rebuilding cancels it; an old replay must never wake up later or pull the visitor back from another section.
+
+## Motion and lifecycle contract
+
+**Explicit owner policy:** OS `prefers-reduced-motion` does not suppress the site's animations. The visible site control is the opt-out: **暫停動畫 / 播放動畫**, stored in `localStorage` as `pixora.site.motion = full | paused`. Missing, invalid or unavailable storage defaults to full motion; storage failures must not break the control.
+
+Paused mode stops decorative loops, parallax, transitions and replay, releases pinning, and leaves all content and manual controls usable with immediate state updates. Resuming returns to the current chapter without replaying the opening entrance. This control does not override the user's native video playback or caption choices.
+
+Offscreen hero decoration and background-tab work stop. Do not retain killed `gsap.quickTo` closures for parallax: rebuilding or pausing must not permanently disable pointer motion after resume. Image decoding may refresh measurements, but loading or failed images never gate initialization.
+
+Rebuilds revert the old GSAP context, cancel outstanding effects and explicitly clear cinema-owned inline styles; Firefox can otherwise retain `fromTo` start visibility after context reversion. Preserve the actors' inline `--x`, `--y`, `--w`, `--r` composition properties. Do not clear all inline styles indiscriminately.
+
+No JavaScript leaves ordinary readable chapters, real images, native video, captions, the transcript and download links. Interactive-only controls stay hidden. Missing WAAPI uses immediate manual state updates; missing observers reveals content immediately; missing dialog support leaves ordinary screenshot links.
+
+## Navigation and focus
+
+- `#features` and `#feature-library` … `#feature-recovery` select the five chapters.
+- `#tour-review`, `#tour-preview`, `#tour-completed` alias confirmation, preview and recovery.
+- `#tour-scope`, `#guide`, `#faq` point at the download section.
+- `#demo` and `#download` remain stable public anchors.
+
+Chapter clicks add history; passive scrolling and timed replay do not. Back/Forward resolve the fragment without discarding manual state. The router owns scroll restoration. A post-`pageshow` correction handles WebKit reload restoration only while the visitor has not already interacted.
+
+Hidden panels and the hidden hero/lab are inert and excluded from the accessibility tree. Release inert state before focusing a destination. Cinema reset, reverse scrolling and the mobile outro must not strand focus inside a hidden control. Keep the visible focus indicator; it is not a decorative card border.
+
+## Evidence and performance guardrails
+
+Keep the original video low-frame-rate, silent and user-initiated, never a looping backdrop. Do not interpolate frames, alter capture facts, replace evidence with fabricated UI or describe the demo as more capable than the recorded product.
+
+The inline caption data URL is byte-identical to `docs/assets/demo.zh-TW.vtt`; it supports direct file viewing without cross-origin track failures. Caption edits require updating both copies and the VTT byte count/hash in `docs/evidence/capture-provenance.json`, recording the editorial change under `video.caption_editing`. `.gitattributes` keeps VTT endings at LF. Keep captions about actual user actions, not benchmarks or implementation details.
+
+Budget the uncompressed JavaScript total—including both vendor scripts—at no more than 200KB. Below-fold evidence images remain lazy; video uses `preload="none"` and must not be requested on initial load. Target LCP ≤2.5s, CLS ≤0.1 and interaction latency ≤200ms. Report throttling conditions with lab measurements; they do not establish field INP or real-device performance. Do not enlarge the sample thumbnails into full-screen backgrounds.
+
+## GitHub Pages and release boundary
+
+The intended Pages setting is **Deploy from a branch → main → /docs** at `https://liutouo.github.io/Pixora-releases/`. `docs/.nojekyll` keeps the site static. Changing Pages settings or publishing requires separate authorization; tests do neither.
+
+Every download CTA points to `https://github.com/LiuTouo/Pixora-releases/releases/latest`, never a versioned installer. Screenshots and guide claims remain verified against v0.3.7 even when the latest release changes. Recheck UI labels, supported behavior and provenance together when updating them. Do not publish private source, local paths or visitor data.
+
+Supplied screenshots and `docs/evidence/` are public evidence, not test output. Benchmark claims retain their synthetic-vector scope, environment and exclusions. Keep generated screenshots, browser traces, dependency directories and local tooling indexes out of Git.

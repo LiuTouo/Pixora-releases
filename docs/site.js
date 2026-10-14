@@ -1,950 +1,811 @@
 'use strict';
 
-/* ================= Shared helpers ================= */
-const canAnimate = () => typeof Element.prototype.animate === 'function';
+const root = document.documentElement;
 const EASE = 'cubic-bezier(.22, 1, .36, 1)';
-const SPRING = 'cubic-bezier(.34, 1.3, .4, 1)';
-document.documentElement.classList.remove('no-js');
-
-/* Demo library: the 12 CC0 / public-domain sample images. */
 const BROWSE_ORDER = ['astronaut.png', 'brick.png', 'camera.png', 'chelsea.png', 'clock_motion.png', 'coffee.png', 'eagle.png', 'grass.png', 'gravel.png', 'horse.png', 'hubble_deep_field.jpg', 'rocket.jpg'];
+const RECORDED_SELECTION = ['astronaut.png', 'rocket.jpg'];
 const SAMPLE_QUERY = 'a photograph of a cat';
+const CHAPTERS = ['library', 'search', 'selection', 'preview', 'recovery'];
+const SCENE_STARTS = [.96, 2.94, 5.17, 7.3, 9.18];
 const thumb = file => `assets/demo/${file.replace(/\.(png|jpg)$/, '')}.webp`;
-/* Deterministic pseudo-random so entrance layouts are stable. */
-const seeded = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-
-const hasGsap = typeof window.gsap === 'object' && !!window.gsap && typeof window.ScrollTrigger !== 'undefined';
+const hasGsap = !!window.gsap && typeof window.ScrollTrigger !== 'undefined';
 if (hasGsap) gsap.registerPlugin(ScrollTrigger);
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+let motion = 'full';
+try { if (localStorage.getItem('pixora.site.motion') === 'paused') motion = 'paused'; } catch { /* Storage is optional, including file:// and private browsing. */ }
+root.dataset.motion = motion;
+root.classList.remove('no-js');
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+const canAnimate = () => motion === 'full' && !document.hidden && typeof Element.prototype.animate === 'function';
 
-/* ================= Reveal system (works without GSAP) ================= */
-const reveals = [...document.querySelectorAll('[data-reveal]')];
-document.querySelectorAll('[data-reveal-group]').forEach(group => {
-  group.querySelectorAll('[data-reveal]').forEach((element, index) => {
-    element.style.setProperty('--reveal-delay', `${Math.min(index * 80, 320)}ms`);
-  });
-});
-let revealObserver;
-let revealsStarted = false;
-function startReveals() {
-  if (revealsStarted) return;
-  revealsStarted = true;
-  if (typeof window.IntersectionObserver === 'function') {
-    revealObserver = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          revealObserver.unobserve(entry.target);
-        }
-      }
-    }, { rootMargin: '0px 0px -18% 0px' });
-    reveals.forEach(element => revealObserver.observe(element));
-    document.documentElement.classList.add('motion-ready');
-  } else {
-    reveals.forEach(element => element.classList.add('revealed'));
-  }
-}
-
-/* ================= Opening intro (GSAP remount of the card-convergence) ================= */
-let introTimer = 0;
-let introDone = false;
-function finishIntro(overlay, timeline) {
-  if (introDone) return;
-  introDone = true;
-  clearTimeout(introTimer);
-  if (timeline) timeline.kill();
-  if (overlay) overlay.remove();
-  document.documentElement.style.overflow = '';
-  startReveals();
-}
-
-function runIntro() {
-  /* Owner decision: the intro is autonomous motion, so unlike the scroll-driven
-     choreography it steps aside for prefers-reduced-motion. */
-  if (introDone || !hasGsap || reduceMotion.matches || document.hidden || window.innerWidth < 420) {
-    startReveals();
-    return;
-  }
-  const overlay = document.createElement('div');
-  overlay.className = 'intro';
-  overlay.setAttribute('aria-hidden', 'true');
-  const field = document.createElement('div');
-  field.className = 'intro-field';
-  const cards = BROWSE_ORDER.map(file => {
-    const card = document.createElement('div');
-    card.className = 'intro-card';
-    const img = document.createElement('img');
-    img.src = thumb(file);
-    img.alt = '';
-    img.decoding = 'async';
-    card.appendChild(img);
-    field.appendChild(card);
-    return card;
-  });
-  const mark = document.createElement('img');
-  mark.className = 'intro-mark';
-  mark.src = 'assets/pixora-icon.webp';
-  mark.alt = '';
-  const tag = document.createElement('p');
-  tag.className = 'intro-tag';
-  tag.textContent = '讓每張圖片，各得其所。';
-  field.append(mark, tag);
-  overlay.appendChild(field);
-  document.body.appendChild(overlay);
-  document.documentElement.style.overflow = 'hidden';
-
-  const skip = () => finishIntro(overlay, timeline);
-  window.addEventListener('pointerdown', skip, { once: true, passive: true });
-  window.addEventListener('keydown', skip, { once: true, passive: true });
-  window.addEventListener('wheel', skip, { once: true, passive: true });
-  window.addEventListener('touchstart', skip, { once: true, passive: true });
-  document.addEventListener('pixora:skip-intro', skip, { once: true });
-
-  const timeline = gsap.timeline();
-  const begin = () => {
-    if (introDone) return;
-    const box = field.getBoundingClientRect();
-    const fw = Math.max(1, box.width), fh = Math.max(1, box.height);
-    const cardW = .21 * fw, cardH = .75 * cardW;
-    const center = { x: fw / 2 - cardW / 2, y: fh / 2 - cardH / 2 };
-    cards.forEach((card, index) => {
-      const col = index % 4, row = Math.floor(index / 4);
-      const diagonal = col + row;
-      const grid = { x: (.025 + col * .257) * fw, y: (.02 + row * .355) * fh };
-      const drift = { x: grid.x + (seeded(index) - .5) * .16 * fw, y: grid.y + (seeded(index + 40) - .5) * .1 * fh };
-      const side = col < 2 ? -1 : 1;
-      const scatter = { x: side * (.9 + seeded(index + 80)) * fw, y: (seeded(index + 120) - .5) * 2.2 * fh };
-      timeline.fromTo(card,
-        { x: scatter.x, y: scatter.y, rotate: side * (12 + seeded(index + 160) * 16), scale: .6, opacity: 0 },
-        { x: drift.x, y: drift.y, rotate: (seeded(index + 200) - .5) * 12, scale: 1, opacity: 1, duration: .56, delay: diagonal * .065, ease: 'back.out(1.2)' }, 0);
-      timeline.to(card, { x: grid.x, y: grid.y, rotate: 0, duration: .28, ease: 'power2.inOut' }, .62 + diagonal * .065);
-      timeline.to(card, { x: center.x, y: center.y, scale: .12, opacity: 0, duration: .34, ease: 'power2.in' }, 1.02 + diagonal * .065);
-    });
-    timeline.fromTo(mark, { scale: .55, opacity: 0 }, { scale: 1, opacity: 1, duration: .42, ease: 'back.out(1.4)' }, 1.06);
-    timeline.to(mark, { scale: 1.06, duration: .12, yoyo: true, repeat: 1 }, 1.44);
-    timeline.to(tag, { opacity: 1, duration: .22 }, 1.46);
-    timeline.to(overlay, { opacity: 0, duration: .26, onComplete: () => finishIntro(overlay, timeline) }, 1.93);
-    introTimer = setTimeout(() => finishIntro(overlay, timeline), 2350);
-  };
-
-  Promise.race([
-    Promise.all(cards.map(card => card.querySelector('img').decode().catch(() => {}))),
-    new Promise(resolve => setTimeout(resolve, 650)),
-  ]).then(begin);
-}
-runIntro();
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    document.querySelector('.intro')?.remove();
-    finishIntro(null);
-  }
-});
-
-/* ================= Lightbox ================= */
-const lightbox = document.querySelector('#lightbox');
-const enlargedImage = lightbox.querySelector('img');
-let imageOpener;
-if (typeof lightbox.showModal === 'function') {
-  document.querySelectorAll('[data-lightbox]').forEach(link => {
-    link.addEventListener('click', event => {
-      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      imageOpener = link;
-      const caption = link.querySelector('img')?.alt || link.dataset.caption;
-      enlargedImage.src = link.href;
-      enlargedImage.alt = caption;
-      document.querySelector('#lightbox-caption').textContent = caption;
-      lightbox.showModal();
-    });
-  });
-  lightbox.querySelector('[data-close]').addEventListener('click', () => lightbox.close());
-  lightbox.addEventListener('close', () => imageOpener?.focus({ preventScroll: true }));
-}
-
-/* Spotlight borders: decorative pointer tracking on image cards. */
-if (finePointer.matches) {
-  document.querySelectorAll('.image-link').forEach(link => {
-    link.addEventListener('pointermove', event => {
-      const box = link.getBoundingClientRect();
-      link.style.setProperty('--spot-x', `${event.clientX - box.left}px`);
-      link.style.setProperty('--spot-y', `${event.clientY - box.top}px`);
-    });
-  });
-}
-
-/* Scrollspy for the floating nav. */
-const navLinks = [...document.querySelectorAll('.site-header nav a[href^="#"]')];
-if (navLinks.length && typeof window.IntersectionObserver === 'function') {
-  const spy = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      navLinks.forEach(link => {
-        if (link.getAttribute('href') === `#${entry.target.id}`) link.setAttribute('aria-current', 'true');
-        else link.removeAttribute('aria-current');
-      });
-    }
-  }, { rootMargin: '-45% 0px -50% 0px' });
-  navLinks.forEach(link => {
-    const section = document.getElementById(link.getAttribute('href').slice(1));
-    if (section) spy.observe(section);
-  });
-}
-
-/* ================= Hero motion (GSAP): parallax, image trail, magnetic buttons ================= */
-if (hasGsap && finePointer.matches && !reduceMotion.matches) {
-  const shell = document.querySelector('[data-parallax]');
-  const glow = document.querySelector('.hero-glow');
-  if (shell && glow) {
-    const shellX = gsap.quickTo(shell, 'x', { duration: .7, ease: 'power3.out' });
-    const shellY = gsap.quickTo(shell, 'y', { duration: .7, ease: 'power3.out' });
-    const glowX = gsap.quickTo(glow, 'x', { duration: 1.1, ease: 'power3.out' });
-    document.querySelector('.hero').addEventListener('pointermove', event => {
-      const nx = event.clientX / window.innerWidth - .5;
-      const ny = event.clientY / window.innerHeight - .5;
-      shellX(nx * 14);
-      shellY(ny * 10);
-      glowX(nx * -30);
-    });
-  }
-
-  /* Image trail: sample thumbnails bloom along the cursor path, then dissolve. */
-  const trailHost = document.querySelector('[data-trail]');
-  if (trailHost) {
-    const POOL = 8;
-    const pool = Array.from({ length: POOL }, () => {
-      const img = document.createElement('img');
-      img.className = 'trail-img';
-      img.alt = '';
-      img.decoding = 'async';
-      trailHost.appendChild(img);
-      return img;
-    });
-    let cursor = 0;
-    let lastSpawn = 0;
-    document.querySelector('.hero').addEventListener('pointermove', event => {
-      const now = performance.now();
-      if (now - lastSpawn < 150) return;
-      lastSpawn = now;
-      const img = pool[cursor = (cursor + 1) % POOL];
-      img.src = thumb(BROWSE_ORDER[(Math.random() * BROWSE_ORDER.length) | 0]);
-      const drift = 30 + seeded(cursor + now % 97) * 50;
-      gsap.fromTo(img,
-        { x: event.clientX + 18, y: event.clientY - 48, rotation: (seeded(now % 53) - .5) * 14, scale: .5, opacity: 0 },
-        { scale: 1, opacity: .85, duration: .3, ease: 'power2.out' });
-      gsap.to(img, { y: `-=${drift}`, opacity: 0, scale: .92, duration: .9, delay: .25, ease: 'power1.in' });
-    });
-  }
-
-  /* Magnetic pull on the focal buttons. */
-  document.querySelectorAll('[data-magnetic]').forEach(button => {
-    const xTo = gsap.quickTo(button, 'x', { duration: .5, ease: 'power3.out' });
-    const yTo = gsap.quickTo(button, 'y', { duration: .5, ease: 'power3.out' });
-    button.addEventListener('pointermove', event => {
-      const box = button.getBoundingClientRect();
-      xTo((event.clientX - box.left - box.width / 2) * .3);
-      yTo((event.clientY - box.top - box.height / 2) * .35);
-    });
-    button.addEventListener('pointerleave', () => {
-      gsap.to(button, { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .4)' });
-    });
-  });
-}
-
-/* ================= Lab: shared DOM and state ================= */
+const journey = document.querySelector('[data-journey]');
+const hero = document.querySelector('.hero');
+const actors = [...document.querySelectorAll('.photo-actor')];
+const field = document.querySelector('.photo-field');
 const lab = document.querySelector('[data-lab]');
-const labFrame = document.querySelector('.lab-frame');
 const stepList = lab.querySelector('.lab-steps');
 const steps = [...stepList.querySelectorAll('a')];
 const panels = [...lab.querySelectorAll('.lab-panel')];
-const noticeBox = lab.querySelector('[data-notice]');
 const guideBox = lab.querySelector('[data-guide]');
+const noticeBox = lab.querySelector('[data-notice]');
+const modeButton = lab.querySelector('[data-view-toggle]');
+const motionButton = document.querySelector('[data-motion-toggle]');
 const autoButton = lab.querySelector('[data-auto]');
 const resetButton = lab.querySelector('[data-reset]');
-const GUIDES_INTERACTIVE = [
-  '從圖庫開始。按「試試用畫面找圖」，或直接點上方步驟。',
-  '輸入英文描述後按「搜尋」，也可以按「填入範例」。此步驟重演已記錄的真實搜尋。',
-  '點選要一起整理的圖片（試試太空人與火箭），命名後按「確認分類」。確認不會搬動檔案。',
-  '逐檔核對來源與目的地。這份清單就是將要執行的內容，確認後才會開始。',
-  '按「套用整理」看圖片歸位，再按「復原這次操作」回到原處。整個過程不會動你的檔案。',
+const queryInput = lab.querySelector('#lab-query');
+const searchGrid = panels[1].querySelector('.lab-grid');
+const selectGrid = panels[2].querySelector('.lab-grid');
+const counter = lab.querySelector('[data-counter]');
+const nameInput = lab.querySelector('#lab-name');
+const acceptButton = lab.querySelector('.lab-accept');
+const planList = lab.querySelector('[data-plan]');
+const planSummary = lab.querySelector('[data-summary]');
+const flyGrid = lab.querySelector('[data-fly]');
+const folder = lab.querySelector('[data-folder]');
+const folderCount = lab.querySelector('[data-count]');
+const applyButton = lab.querySelector('[data-apply-btn]');
+const undoButton = lab.querySelector('[data-undo-btn]');
+const record = lab.querySelector('[data-record]');
+const recordCount = lab.querySelector('[data-record-count]');
+const GUIDES = [
+  '預載錄影中的範例。從圖庫開始，或直接點選上方步驟。',
+  '輸入英文描述後按「搜尋」。此頁只重演已記錄的搜尋，不會執行 AI 推論。',
+  '回到完整圖庫，選取要整理的圖片。命名並確認分類，此刻不會搬動檔案。',
+  '逐檔核對來源與目的地。更改選取或分類名稱後，必須重新確認。',
+  '套用後再試試復原。這裡只操作示範資料，不會動你的檔案。',
 ];
-const GUIDES_CINEMA = [
-  '從圖庫開始。繼續往下捲動，或點上方步驟。',
-  '輸入英文描述，搜尋已完成分析的圖片。繼續捲動看重演結果。',
-  '點選圖片即可加入或移出選取。這裡重演選取太空人與火箭。',
-  '逐檔核對來源與目的地，確認後才會執行。',
-  '套用後可從操作紀錄復原。往回捲動，隨時重看任一步。',
-];
+// Manual state is never written by the scroll timeline or responsive rebuilds.
+const state = { step: 0, selected: [...RECORDED_SELECTION], confirmed: true, searched: false, applied: false, undone: false, autoplay: false };
+let mode = 'story';
+let activeIndex = -1;
+let manualRequested = false;
+let manualVisited = false;
+let cinema = null;
+let cinemaContext = null;
+let scrollTween = null;
+const effects = new Set();
 
-const state = {
-  step: 0,
-  searched: false,
-  selected: [],
-  confirmed: false,
-  applied: false,
-  undone: false,
-  autoplay: false,
-};
-let mode = 'interactive'; /* 'interactive' | 'cinema' */
+function notice(text = '') { noticeBox.textContent = text; }
+function animate(element, frames, options, finish) {
+  if (!canAnimate()) { finish?.(); return; }
+  const effect = element.animate(frames, { easing: EASE, ...options });
+  effects.add(effect);
+  effect.onfinish = () => { effects.delete(effect); finish?.(); };
+  effect.oncancel = () => effects.delete(effect);
+  return effect;
+}
+function cancelPanelAnimations() {
+  effects.forEach(effect => { effect.onfinish = null; effect.cancel(); });
+  effects.clear();
+  panels.forEach(panel => panel.classList.remove('is-leaving'));
+}
 
-function notice(text) { noticeBox.textContent = text || ''; }
+/* Static chapter illustrations are independent of the live form and its state. */
+for (const [index, panel] of panels.entries()) {
+  const illustration = panel.querySelector('.lab-board').cloneNode(true);
+  illustration.className = 'story-illustration';
+  illustration.querySelectorAll('.lab-actions, .lab-confirm, .lab-record').forEach(element => element.remove());
+  illustration.querySelectorAll('*').forEach(element => {
+    for (const attribute of [...element.attributes]) {
+      if (attribute.name === 'id' || attribute.name.startsWith('data-') || ['role', 'tabindex', 'aria-checked'].includes(attribute.name)) element.removeAttribute(attribute.name);
+    }
+  });
+  if (index === 1) {
+    const query = document.createElement('p');
+    query.className = 'illustration-query';
+    query.textContent = SAMPLE_QUERY;
+    illustration.querySelector('.lab-search').replaceWith(query);
+    const cat = illustration.querySelector('img[src$="chelsea.webp"]').closest('.lab-card');
+    cat.classList.add('is-hit');
+    cat.parentNode.prepend(cat);
+  }
+  if (index === 2 || index === 4) {
+    illustration.replaceChildren();
+    const pair = document.createElement('div');
+    pair.className = 'illustration-pair';
+    RECORDED_SELECTION.forEach(file => {
+      const figure = document.createElement('figure');
+      const image = document.createElement('img');
+      image.src = thumb(file);
+      image.alt = file === 'rocket.jpg' ? '火箭發射' : '太空人';
+      image.loading = 'lazy';
+      image.width = 480;
+      image.height = 480;
+      const caption = document.createElement('figcaption');
+      caption.textContent = file;
+      figure.append(image, caption);
+      pair.append(figure);
+    });
+    const label = document.createElement('p');
+    label.className = 'illustration-label';
+    label.textContent = index === 2 ? '人工選取 2 張 → 確認為「太空探索」' : '太空探索/ → 原位置 · 已復原 2 個檔案';
+    illustration.append(pair, label);
+  }
+  illustration.dataset.reveal = '';
+  panel.append(illustration);
+}
 
-/* --- shared rail ARIA + indicator --- */
 const indicator = document.createElement('span');
 indicator.className = 'step-indicator';
 indicator.setAttribute('aria-hidden', 'true');
-stepList.appendChild(indicator);
+stepList.append(indicator);
 function positionIndicator() {
-  const active = steps[state.step];
-  if (!active) return;
-  const { offsetLeft, offsetTop, offsetWidth, offsetHeight } = active;
-  indicator.style.transform = `translate(${offsetLeft}px, ${offsetTop + offsetHeight - 2}px) scaleX(${offsetWidth})`;
+  indicator.style.transform = `translateX(${Math.max(0, activeIndex) * 100}%)`;
 }
-stepList.setAttribute('role', 'tablist');
-steps.forEach((step, index) => {
-  step.setAttribute('role', 'tab');
-  step.setAttribute('aria-controls', panels[index].id);
-  panels[index].setAttribute('role', 'tabpanel');
-});
-
-function applyRail(index, guides) {
-  state.step = index;
+function applyRail(index) {
+  activeIndex = index;
+  const tabbed = mode !== 'story';
+  if (tabbed) stepList.setAttribute('role', 'tablist');
+  else stepList.removeAttribute('role');
   steps.forEach((step, position) => {
     const selected = position === index;
-    step.setAttribute('aria-selected', String(selected));
-    step.tabIndex = selected ? 0 : -1;
-    step.classList.toggle('is-done', position < index);
     const panel = panels[position];
-    panel.setAttribute('aria-hidden', String(!selected));
-    panel.inert = !selected;
-    panel.tabIndex = selected ? 0 : -1;
+    if (tabbed) {
+      step.setAttribute('role', 'tab');
+      step.setAttribute('aria-controls', panel.id);
+      step.setAttribute('aria-selected', String(selected));
+      step.removeAttribute('aria-current');
+      step.tabIndex = selected || index < 0 && position === 0 ? 0 : -1;
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-hidden', String(!selected));
+      panel.inert = !selected;
+    } else {
+      step.removeAttribute('role');
+      step.removeAttribute('aria-selected');
+      step.removeAttribute('aria-controls');
+      if (selected) step.setAttribute('aria-current', 'step');
+      else step.removeAttribute('aria-current');
+      step.tabIndex = 0;
+      panel.setAttribute('role', 'region');
+      panel.removeAttribute('aria-hidden');
+      panel.inert = false;
+    }
+    panel.tabIndex = tabbed && selected ? 0 : -1;
+    panel.classList.toggle('is-active', selected);
   });
-  guideBox.textContent = guides[index];
+  guideBox.textContent = mode === 'cinema'
+    ? '捲動繼續，往回捲可重看。也可以點選章節，或選「自己試一次」。'
+    : GUIDES[Math.max(0, index)];
   positionIndicator();
 }
 
-/* --- shared board controls --- */
-const searchPanel = panels[1];
-const queryInput = searchPanel.querySelector('#lab-query');
-const searchGrid = searchPanel.querySelector('.lab-grid');
-const selectPanel = panels[2];
-const selectGrid = selectPanel.querySelector('.lab-grid');
-const counter = selectPanel.querySelector('[data-counter]');
-const nameInput = selectPanel.querySelector('#lab-name');
-const acceptButton = selectPanel.querySelector('.lab-accept');
-const previewPanel = panels[3];
-const planList = previewPanel.querySelector('[data-plan]');
-const planSummary = previewPanel.querySelector('[data-summary]');
-const applyPanel = panels[4];
-const flyGrid = applyPanel.querySelector('[data-fly]');
-const folder = applyPanel.querySelector('[data-folder]');
-const folderCount = applyPanel.querySelector('[data-count]');
-const applyButton = applyPanel.querySelector('[data-apply-btn]');
-const undoButton = applyPanel.querySelector('[data-undo-btn]');
-const record = applyPanel.querySelector('[data-record]');
-const recordCount = applyPanel.querySelector('[data-record-count]');
-
-function groupName() { return nameInput.value.trim() || '太空探索'; }
+/* Manual search → human confirmation → per-file preview → apply → undo. */
+function groupName() { return nameInput.value.trim(); }
 function syncSelection() {
   counter.textContent = `已選 ${state.selected.length} 張`;
-  acceptButton.disabled = state.selected.length === 0 || nameInput.value.trim() === '';
-}
-
-/* --- FLIP reorder for manual search --- */
-function flipReorder(grid, order) {
-  const cards = [...grid.children];
-  const first = new Map(cards.map(card => [card.dataset.file, card.getBoundingClientRect()]));
-  order.forEach(file => {
-    const card = cards.find(entry => entry.dataset.file === file);
-    if (card) grid.appendChild(card);
-  });
-  if (!canAnimate()) return;
-  order.forEach((file, rank) => {
-    const card = cards.find(entry => entry.dataset.file === file);
-    if (!card) return;
-    const before = first.get(file);
-    const after = card.getBoundingClientRect();
-    const dx = before.left - after.left;
-    const dy = before.top - after.top;
-    if (!dx && !dy) return;
-    card.animate([
-      { transform: `translate(${dx}px, ${dy}px)` },
-      { transform: 'none' },
-    ], { duration: 480, easing: EASE, delay: rank * 32 });
+  acceptButton.disabled = !state.selected.length || !groupName();
+  panels[2].querySelector('.lab-dest strong').textContent = `${groupName() || '尚未命名'}/`;
+  selectGrid.querySelectorAll('.lab-card').forEach(card => {
+    const selected = state.selected.includes(card.dataset.file);
+    card.classList.toggle('is-selected', selected);
+    card.setAttribute('aria-checked', String(selected));
   });
 }
-
-function runSearch() {
-  const query = queryInput.value.trim();
-  if (!query) {
-    notice('先輸入英文描述，或按「填入範例」。');
-    queryInput.focus();
-    return;
-  }
-  state.searched = true;
-  flipReorder(searchGrid, ['chelsea.png', ...BROWSE_ORDER.filter(file => file !== 'chelsea.png')]);
-  searchGrid.querySelectorAll('.lab-card').forEach(card => card.classList.toggle('is-hit', card.dataset.file === 'chelsea.png'));
-  notice(query === SAMPLE_QUERY
-    ? '已找到畫面最相近的結果：貓（chelsea.png）排在最前。'
-    : `示範僅收錄了「${SAMPLE_QUERY}」的已記錄結果，已為你顯示該結果。`);
-}
-
-function toggleCard(card, pulse = false) {
-  const file = card.dataset.file;
-  const on = !state.selected.includes(file);
-  state.selected = on ? [...state.selected, file] : state.selected.filter(entry => entry !== file);
-  card.classList.toggle('is-selected', on);
-  card.setAttribute('aria-checked', String(on));
-  if (pulse && canAnimate()) {
-    card.animate([
-      { transform: 'scale(1)' },
-      { transform: 'scale(1.07)' },
-      { transform: 'scale(1)' },
-    ], { duration: 420, easing: EASE });
-  }
-  syncSelection();
-}
-
 function renderPlan() {
   planList.replaceChildren(...state.selected.map(file => {
     const row = document.createElement('li');
-    const from = document.createElement('span');
-    from.className = 'from';
-    from.textContent = file;
-    const move = document.createElement('span');
-    move.className = 'move';
-    move.setAttribute('aria-hidden', 'true');
-    move.textContent = '→';
-    const to = document.createElement('span');
-    to.className = 'to';
-    to.textContent = `${groupName()}/${file}`;
-    row.append(from, move, to);
+    for (const [className, text] of [['from', file], ['move', '→'], ['to', `${groupName() || '尚未命名'}/${file}`]]) {
+      const span = document.createElement('span');
+      span.className = className;
+      span.textContent = text;
+      if (className === 'move') span.setAttribute('aria-hidden', 'true');
+      row.append(span);
+    }
     return row;
   }));
-  const kept = BROWSE_ORDER.length - state.selected.length;
-  planSummary.replaceChildren();
-  planSummary.append(`將搬移 ${state.selected.length} 張 · 其餘 ${kept} 張維持原處 · 確認後才會執行`);
+  planSummary.textContent = state.confirmed
+    ? `將搬移 ${state.selected.length} 張 · 其餘 ${12 - state.selected.length} 張維持原處 · 確認後才會執行`
+    : '請先選取圖片、命名並確認分類，再核對搬移清單。';
+  panels[3].querySelector('[data-goto="4"]').disabled = !state.confirmed;
 }
-
 function renderFly() {
   flyGrid.replaceChildren(...state.selected.map(file => {
     const card = document.createElement('li');
     card.className = 'lab-card';
     card.dataset.file = file;
-    const img = document.createElement('img');
-    img.src = thumb(file);
-    img.alt = '';
-    img.loading = 'lazy';
+    const image = document.createElement('img');
+    image.src = thumb(file);
+    image.alt = '';
+    image.width = 480;
+    image.height = 360;
     const label = document.createElement('span');
     label.textContent = file;
-    card.append(img, label);
+    card.append(image, label);
+    card.style.visibility = state.applied ? 'hidden' : '';
     return card;
   }));
-  folder.lastChild.textContent = `${groupName()}/`;
-  folderCount.textContent = state.applied ? state.selected.length : 0;
+  folder.lastChild.textContent = `${groupName() || '尚未命名'}/`;
+  folderCount.textContent = state.applied ? String(state.selected.length) : '0';
   folder.classList.toggle('is-filled', state.applied);
-  flyGrid.querySelectorAll('.lab-card').forEach(card => { card.style.visibility = state.applied ? 'hidden' : ''; });
+  applyButton.disabled = !state.confirmed || state.applied;
+  undoButton.disabled = !state.applied;
+  record.hidden = !state.undone;
+  recordCount.textContent = String(state.selected.length);
 }
-
-/* The recorded v0.3.7 demonstration is the initial interactive state. */
-function applyRecordedState() {
-  state.selected = ['astronaut.png', 'rocket.jpg'];
-  selectGrid.querySelectorAll('.lab-card').forEach(card => {
-    const on = state.selected.includes(card.dataset.file);
-    card.classList.toggle('is-selected', on);
-    card.setAttribute('aria-checked', String(on));
-  });
+function invalidatePlan() {
+  cancelPanelAnimations();
+  Object.assign(state, { confirmed: false, applied: false, undone: false });
+  syncSelection();
   renderPlan();
   renderFly();
-  syncSelection();
 }
-
-/* ================= Lab: interactive mode (fallback for small viewports, no GSAP) ================= */
-let panelAnimations = [];
-function cancelPanelAnimations() {
-  panelAnimations.forEach(animation => animation.cancel());
-  panelAnimations = [];
-  panels.forEach(panel => panel.classList.remove('is-leaving'));
+function flipReorder(grid, order) {
+  const cards = [...grid.children];
+  const before = new Map(cards.map(card => [card.dataset.file, card.getBoundingClientRect()]));
+  order.forEach(file => grid.append(cards.find(card => card.dataset.file === file)));
+  if (!canAnimate()) return;
+  cards.forEach(card => {
+    const first = before.get(card.dataset.file);
+    const last = card.getBoundingClientRect();
+    animate(card, [{ transform: `translate(${first.left - last.left}px, ${first.top - last.top}px)` }, { transform: 'none' }], { duration: 480 });
+  });
+}
+function runSearch() {
+  if (!queryInput.value.trim()) { notice('先輸入英文描述，或按「填入範例」。'); queryInput.focus(); return; }
+  cancelPanelAnimations();
+  state.searched = true;
+  flipReorder(searchGrid, ['chelsea.png', ...BROWSE_ORDER.filter(file => file !== 'chelsea.png')]);
+  searchGrid.querySelectorAll('.lab-card').forEach(card => card.classList.toggle('is-hit', card.dataset.file === 'chelsea.png'));
+  notice(queryInput.value.trim() === SAMPLE_QUERY
+    ? '已記錄的搜尋結果：貓（chelsea.png）排在最前。'
+    : `此頁只收錄「${SAMPLE_QUERY}」的已記錄結果；並未對你輸入的文字執行搜尋。`);
+}
+function toggleCard(card) {
+  const file = card.dataset.file;
+  state.selected = state.selected.includes(file) ? state.selected.filter(value => value !== file) : [...state.selected, file];
+  invalidatePlan();
+  animate(card, [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 300 });
 }
 function animatePanel(panel, outgoing) {
-  if (!canAnimate()) return;
-  const options = { duration: 420, easing: EASE };
-  panelAnimations.push(panel.animate([
-    { opacity: 0, transform: 'translateY(16px) scale(.99)' },
-    { opacity: 1, transform: 'none' },
-  ], options));
+  if (!canAnimate() || !outgoing || outgoing === panel) return;
   outgoing.classList.add('is-leaving');
-  const exit = outgoing.animate([
-    { opacity: 1, transform: 'none' },
-    { opacity: 0, transform: 'translateY(-8px)' },
-  ], { ...options, duration: 260 });
-  exit.onfinish = () => outgoing.classList.remove('is-leaving');
+  animate(outgoing, [{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 180 }, () => outgoing.classList.remove('is-leaving'));
+  animate(panel, [{ opacity: 0, transform: 'translateY(15px)' }, { opacity: 1, transform: 'none' }], { duration: 360 });
 }
-
-function selectStep(index, animate = false) {
-  const previous = state.step;
+function selectStep(index, animated = false) {
+  const previous = panels[state.step];
+  const movingFocus = previous?.contains(document.activeElement);
   cancelPanelAnimations();
-  applyRail(index, GUIDES_INTERACTIVE);
-  panels.forEach((panel, position) => panel.classList.toggle('is-active', position === index));
-  if (animate && previous !== index) animatePanel(panels[index], panels[previous]);
+  renderFly();
+  state.step = index;
+  applyRail(index);
+  if (animated) animatePanel(panels[index], previous);
+  if (movingFocus && previous !== panels[index]) steps[index].focus({ preventScroll: true });
 }
-
-function alignLab() {
-  const bounds = labFrame.getBoundingClientRect();
-  const headerHeight = innerWidth >= 768 ? 88 : 0;
-  if (bounds.top < headerHeight - 4 || bounds.bottom > innerHeight) {
-    labFrame.scrollIntoView({ block: 'start', behavior: 'instant' });
-  }
+function alignLab(animated = false) {
+  scrollToPosition(scrollY + lab.getBoundingClientRect().top - document.querySelector('.site-header').offsetHeight - 12, animated);
 }
-
-function activateStep(index) {
+function activateStep(index, publish = true) {
+  if (publish) pushHash(`#${panels[index].id}`);
   selectStep(index, true);
-  const hash = `#${panels[index].id}`;
-  if (location.hash !== hash) history.pushState(null, '', hash);
   alignLab();
 }
-
-/* --- cinema rail / keyboard routing (branch inside shared handlers) --- */
-steps.forEach((step, index) => {
-  step.addEventListener('click', event => {
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    stopAutoplay();
-    if (mode === 'cinema') cinemaGoTo(index);
-    else activateStep(index);
-  });
-  step.addEventListener('keydown', event => {
-    let next = index;
-    if (event.key === 'ArrowRight') next = (index + 1) % steps.length;
-    else if (event.key === 'ArrowLeft') next = (index + steps.length - 1) % steps.length;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = steps.length - 1;
-    else return;
-    event.preventDefault();
-    stopAutoplay();
-    steps[next].focus({ preventScroll: true });
-    if (mode === 'cinema') cinemaGoTo(next);
-    else activateStep(next);
-  });
-});
-
-/* --- interactive-only listeners (guarded by mode) --- */
-searchPanel.querySelector('.lab-run').addEventListener('click', () => { stopAutoplay(true); runSearch(); });
-searchPanel.querySelector('.lab-fill').addEventListener('click', () => {
-  queryInput.value = SAMPLE_QUERY;
-  queryInput.focus();
-});
-queryInput.addEventListener('keydown', event => {
-  if (event.key === 'Enter') { event.preventDefault(); stopAutoplay(true); runSearch(); }
-});
-
-selectGrid.addEventListener('click', event => {
-  const card = event.target.closest('.lab-card');
-  if (!card || mode === 'cinema') return;
-  stopAutoplay(true);
-  toggleCard(card);
-});
-selectGrid.addEventListener('keydown', event => {
-  if (event.key !== ' ' && event.key !== 'Enter') return;
-  const card = event.target.closest('.lab-card');
-  if (!card || mode === 'cinema') return;
-  event.preventDefault();
-  stopAutoplay(true);
-  toggleCard(card);
-});
-nameInput.addEventListener('input', syncSelection);
-
+function confirmSelection() {
+  if (!state.selected.length || !groupName()) return;
+  cancelPanelAnimations();
+  Object.assign(state, { confirmed: true, applied: false, undone: false });
+  renderPlan();
+  renderFly();
+  activateStep(3, !state.autoplay);
+  notice(`已確認 ${state.selected.length} 張，此刻檔案都還在原處。`);
+}
 function flyIntoFolder() {
+  if (!state.confirmed || state.applied) return;
+  cancelPanelAnimations();
   state.applied = true;
   state.undone = false;
-  const cards = [...flyGrid.children];
   const target = folder.getBoundingClientRect();
-  const count = state.selected.length;
-  if (canAnimate()) {
-    cards.forEach((card, index) => {
-      const box = card.getBoundingClientRect();
-      const dx = target.left + target.width / 2 - (box.left + box.width / 2);
-      const dy = target.top + target.height / 2 - (box.top + box.height / 2);
-      const flight = card.animate([
-        { transform: 'none', opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) scale(.1)`, opacity: .1 },
-      ], { duration: 560, delay: index * 140, easing: EASE, fill: 'forwards' });
-      flight.onfinish = () => { card.style.visibility = 'hidden'; };
-    });
-    folder.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 460, delay: 280 + cards.length * 140, easing: SPRING });
-  } else {
-    cards.forEach(card => { card.style.visibility = 'hidden'; });
-  }
-  setTimeout(() => { if (state.applied) { folderCount.textContent = count; folder.classList.add('is-filled'); } }, canAnimate() ? 420 : 0);
+  [...flyGrid.children].forEach((card, index) => {
+    const box = card.getBoundingClientRect();
+    const x = target.left + target.width / 2 - box.left - box.width / 2;
+    const y = target.top + target.height / 2 - box.top - box.height / 2;
+    animate(card, [{ transform: 'none', opacity: 1 }, { transform: `translate(${x}px, ${y}px) scale(.12)`, opacity: 0 }], { duration: 540, delay: index * 100 }, () => { card.style.visibility = 'hidden'; });
+  });
+  folderCount.textContent = String(state.selected.length);
+  folder.classList.add('is-filled');
   applyButton.disabled = true;
   undoButton.disabled = false;
   record.hidden = true;
-  notice(`已套用：${count} 張移入 ${groupName()}/。真實操作中，這一步會實際搬移檔案。`);
+  notice(`已套用：${state.selected.length} 張移入 ${groupName()}/。真實操作中，這一步會實際搬移檔案。`);
 }
 function flyBack() {
-  state.undone = true;
-  state.applied = false;
-  const cards = [...flyGrid.children];
+  if (!state.applied) return;
+  cancelPanelAnimations();
+  Object.assign(state, { applied: false, undone: true });
+  renderFly();
   const target = folder.getBoundingClientRect();
-  if (canAnimate()) {
-    cards.forEach((card, index) => {
-      card.style.visibility = '';
-      const box = card.getBoundingClientRect();
-      const dx = target.left + target.width / 2 - (box.left + box.width / 2);
-      const dy = target.top + target.height / 2 - (box.top + box.height / 2);
-      card.animate([
-        { transform: `translate(${dx}px, ${dy}px) scale(.1)`, opacity: .1 },
-        { transform: 'none', opacity: 1 },
-      ], { duration: 520, delay: index * 130, easing: SPRING });
-    });
-  } else {
-    cards.forEach(card => { card.style.visibility = ''; });
-  }
-  folderCount.textContent = 0;
-  folder.classList.remove('is-filled');
-  recordCount.textContent = state.selected.length;
-  record.hidden = false;
-  undoButton.disabled = true;
+  [...flyGrid.children].forEach((card, index) => {
+    const box = card.getBoundingClientRect();
+    const x = target.left + target.width / 2 - box.left - box.width / 2;
+    const y = target.top + target.height / 2 - box.top - box.height / 2;
+    animate(card, [{ transform: `translate(${x}px, ${y}px) scale(.12)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: index * 90 });
+  });
   notice(`已復原：${state.selected.length} 個檔案回到原位置。復原紀錄跨重啟保存。`);
 }
-applyButton.addEventListener('click', () => { stopAutoplay(true); if (!state.applied) flyIntoFolder(); });
-undoButton.addEventListener('click', () => { stopAutoplay(true); if (state.applied && !state.undone) flyBack(); });
-
-function confirmSelection(pulse = false) {
-  if (!state.selected.length) return;
-  state.confirmed = true;
-  state.applied = false;
-  state.undone = false;
-  const cards = selectGrid.querySelectorAll('.lab-card');
-  if (pulse && canAnimate()) {
-    cards.forEach(card => {
-      if (state.selected.includes(card.dataset.file)) {
-        card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 380, easing: EASE });
-      }
-    });
-  }
-  renderPlan();
-  renderFly();
-  notice(`已確認 ${state.selected.length} 張，此刻檔案都還在原處。`);
-  applyButton.disabled = false;
-  undoButton.disabled = true;
-  setTimeout(() => { if (state.confirmed && state.step === 2 && mode === 'interactive') activateStep(3); }, pulse ? 650 : 420);
-}
-acceptButton.addEventListener('click', () => { stopAutoplay(true); confirmSelection(); });
-
-function resetLab(keepStep = false) {
+function resetLab() {
+  cancelPanelAnimations();
   Object.assign(state, { searched: false, selected: [], confirmed: false, applied: false, undone: false });
   queryInput.value = '';
   nameInput.value = '太空探索';
-  searchGrid.querySelectorAll('.lab-card').forEach(card => card.classList.remove('is-hit'));
-  selectGrid.querySelectorAll('.lab-card').forEach(card => {
-    card.classList.remove('is-selected');
-    card.setAttribute('aria-checked', 'false');
-  });
   flipReorder(searchGrid, BROWSE_ORDER);
-  folderCount.textContent = 0;
-  folder.classList.remove('is-filled');
-  record.hidden = true;
-  applyButton.disabled = false;
-  undoButton.disabled = true;
-  flyGrid.querySelectorAll('.lab-card').forEach(card => { card.style.visibility = ''; });
+  searchGrid.querySelectorAll('.lab-card').forEach(card => card.classList.remove('is-hit'));
   syncSelection();
-  if (!keepStep) selectStep(0, false);
-  notice('');
+  renderPlan();
+  renderFly();
+  selectStep(0);
+  notice('已清空選取，換你決定圖片的位置。');
 }
 
-resetButton.addEventListener('click', () => {
-  if (mode === 'cinema') { cinemaRestart(); return; }
-  stopAutoplay();
-  resetLab();
-  alignLab();
-});
-
-/* --- autoplay (interactive mode only) --- */
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function autoplay() {
-  if (state.autoplay) { stopAutoplay(); return; }
-  state.autoplay = true;
-  autoButton.textContent = '停止演出';
-  const alive = () => state.autoplay;
-  resetLab(true);
-  selectStep(0, true);
-  notice('自動演出開始：重演已記錄的真實操作流程。');
-  await wait(700); if (!alive()) return;
-  activateStep(1);
-  await wait(500); if (!alive()) return;
-  queryInput.value = '';
-  queryInput.focus({ preventScroll: true });
-  for (const character of SAMPLE_QUERY) {
-    if (!alive()) return;
-    queryInput.value += character;
-    await wait(34);
-  }
-  if (!alive()) return;
-  runSearch();
-  await wait(1100); if (!alive()) return;
-  activateStep(2);
-  await wait(500); if (!alive()) return;
-  for (const file of ['astronaut.png', 'rocket.jpg']) {
-    if (!alive()) return;
-    const card = selectGrid.querySelector(`[data-file="${file}"]`);
-    if (card && !state.selected.includes(file)) toggleCard(card, true);
-    await wait(520);
-  }
-  if (!alive()) return;
-  confirmSelection(true);
-  await wait(900); if (!alive()) return;
-  activateStep(4);
-  await wait(600); if (!alive()) return;
-  flyIntoFolder();
-  await wait(1500); if (!alive()) return;
-  flyBack();
-  await wait(800); if (!alive()) return;
-  notice('完整流程重演完畢。換你試試：按「重新體驗」自己操作一次。');
-  stopAutoplay(true);
-}
+/* One cancellable timer; stopping a replay cannot resume an older replay later. */
+let playbackToken = 0;
+let playbackTimer = 0;
+let cancelWait = null;
 function stopAutoplay(silent = false) {
+  playbackToken++;
+  clearTimeout(playbackTimer);
+  cancelWait?.(false);
+  cancelWait = null;
   if (!state.autoplay) return;
   state.autoplay = false;
   autoButton.textContent = '自動演出';
-  if (!silent) notice('演出已停止，你可以繼續手動操作。');
+  if (!silent) notice('演出已停止，可繼續手動操作。');
 }
-autoButton.addEventListener('click', () => { if (mode === 'interactive') state.autoplay ? stopAutoplay() : autoplay(); });
-lab.addEventListener('pointerdown', event => {
-  if (state.autoplay && !autoButton.contains(event.target)) stopAutoplay(true);
-});
-lab.addEventListener('keydown', event => {
-  if (state.autoplay && event.key === 'Escape') stopAutoplay();
-});
-
-lab.querySelectorAll('[data-goto]').forEach(button => {
-  button.addEventListener('click', () => {
-    if (mode !== 'interactive') return;
-    stopAutoplay();
-    activateStep(Number(button.dataset.goto));
+async function autoplay() {
+  if (state.autoplay) { stopAutoplay(); return; }
+  resetLab();
+  state.autoplay = true;
+  autoButton.textContent = '停止演出';
+  notice('自動演出開始：重演已記錄的真實操作流程。');
+  const token = ++playbackToken;
+  const wait = ms => new Promise(resolve => {
+    cancelWait = resolve;
+    playbackTimer = setTimeout(() => { cancelWait = null; resolve(token === playbackToken); }, ms);
   });
-});
-
-/* ================= Lab: cinema mode (pinned scroll choreography) ================= */
-let cinema = null; /* { timeline, scrollTrigger } */
-let cinemaIndex = -1;
-
-function cinemaScrollTarget(index) {
-  const st = cinema.scrollTrigger;
-  if (!st || typeof st.start !== 'number') return null;
-  const segment = (st.end - st.start) / 5;
-  return st.start + segment * (index + 0.35);
-}
-function cinemaGoTo(index) {
-  const top = cinemaScrollTarget(index);
-  if (top === null) return;
-  const hash = `#${panels[index].id}`;
-  if (location.hash !== hash) history.pushState(null, '', hash);
-  window.scrollTo({ top, behavior: 'smooth' });
-}
-function cinemaRestart() {
-  const st = cinema?.scrollTrigger;
-  if (st && typeof st.start === 'number') window.scrollTo({ top: st.start, behavior: 'smooth' });
-}
-
-function syncCinema(progress) {
-  const index = Math.min(4, Math.floor(progress * 5));
-  if (index !== cinemaIndex) {
-    cinemaIndex = index;
-    applyRail(index, GUIDES_CINEMA);
+  if (!await wait(650)) return;
+  activateStep(1, false);
+  for (const letter of SAMPLE_QUERY) { if (!await wait(36)) return; queryInput.value += letter; }
+  runSearch();
+  if (!await wait(1000)) return;
+  activateStep(2, false);
+  for (const file of RECORDED_SELECTION) {
+    if (!await wait(500)) return;
+    toggleCard(selectGrid.querySelector(`[data-file="${file}"]`));
   }
-  const filled = progress >= .868 && progress < .925;
-  folder.classList.toggle('is-filled', filled);
-  const selectedNow = progress >= .425 && progress < .868;
-  ['astronaut.png', 'rocket.jpg'].forEach(file => {
-    selectGrid.querySelector(`[data-file="${file}"]`)?.setAttribute('aria-checked', String(selectedNow));
-  });
+  if (!await wait(700)) return;
+  confirmSelection();
+  if (!await wait(1500)) return;
+  activateStep(4, false);
+  if (!await wait(500)) return;
+  flyIntoFolder();
+  if (!await wait(1600)) return;
+  flyBack();
+  stopAutoplay(true);
+  notice('重演完畢。換你試試：按「重新體驗」，自己操作一次。');
 }
 
+/* The same twelve actors travel through every desktop chapter. */
+function syncCinema(time) {
+  let index = -1;
+  SCENE_STARTS.forEach((start, position) => { if (time >= start) index = position; });
+  const features = document.querySelector('#features');
+  const focusedPanel = panels.find(panel => panel.contains(document.activeElement));
+  const hidingFeatures = index < 0 && features.contains(document.activeElement);
+  const hidingHero = index >= 0 && hero.contains(document.activeElement);
+  hero.inert = index >= 0;
+  hero.setAttribute('aria-hidden', String(index >= 0));
+  features.inert = index < 0;
+  features.setAttribute('aria-hidden', String(index < 0));
+  if (activeIndex !== index) applyRail(index);
+  if (hidingFeatures) document.querySelector('.brand').focus({ preventScroll: true });
+  else if (hidingHero || focusedPanel && focusedPanel !== panels[index]) steps[index].focus({ preventScroll: true });
+  journey.dataset.scene = index < 0 ? 'hero' : CHAPTERS[index];
+  document.querySelector('[data-story-count]').textContent = time >= 11.08 && time < 12.04 ? '2' : '0';
+  const typed = Math.max(0, Math.min(1, (time - 3.05) / .75));
+  document.querySelector('[data-story-query]').textContent = SAMPLE_QUERY.slice(0, Math.round(typed * SAMPLE_QUERY.length));
+}
 function buildCinema() {
   mode = 'cinema';
-  labFrame.classList.add('lab-ready', 'lab-cinema');
-  autoButton.hidden = true;
-  resetLab(true);
-  record.hidden = false; /* the timeline fades it in and out instead */
-  /* Base states: only the first panel shows; the story builds itself. */
-  gsap.set(panels, { autoAlpha: 0 });
-  gsap.set(panels[0], { autoAlpha: 1 });
-  const libraryCards = panels[0].querySelectorAll('.lab-card');
-  gsap.set(libraryCards, { y: 36, autoAlpha: 0 });
-  const hitBadge = searchGrid.querySelector('.lab-hit');
-  const chelseaCard = searchGrid.querySelector('[data-file="chelsea.png"]');
-  const dimmedCards = [...searchGrid.querySelectorAll('.lab-card')].filter(card => card.dataset.file !== 'chelsea.png');
-  const recordedChecks = ['astronaut.png', 'rocket.jpg'].map(file => selectGrid.querySelector(`[data-file="${file}"] .lab-check`));
-  const planRows = planList.querySelectorAll('li');
-
-  const selectedCount = { n: 0 };
-  const movedCount = { n: 0 };
-
-  const timeline = gsap.timeline({
-    defaults: { ease: 'none' },
-    scrollTrigger: {
-      trigger: labFrame,
-      start: () => `top ${Math.min(96, Math.round(innerHeight * .12))}`,
-      end: () => `+=${Math.round(innerHeight * 3.6)}`,
-      pin: true,
-      scrub: 0.6,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      onUpdate: self => syncCinema(self.progress),
-    },
+  journey.classList.add('journey-cinema');
+  lab.classList.remove('lab-story', 'lab-manual');
+  lab.classList.add('lab-cinema');
+  cinemaContext = gsap.context(() => {
+    const width = innerWidth, height = innerHeight;
+    const size = 168;
+    const columns = width < 1100 ? 4 : 6;
+    const cell = Math.min(width * .77 / columns, 184);
+    const scale = (cell - 24) / size;
+    const grid = index => ({ x: (width - cell * columns) / 2 + index % columns * cell, y: height * .4 + Math.floor(index / columns) * (cell * .75 + 20), scale, rotation: 0, autoAlpha: 1 });
+    const pair = actors.filter(actor => RECORDED_SELECTION.includes(actor.dataset.file));
+    const others = actors.filter(actor => !pair.includes(actor));
+    const cat = actors.find(actor => actor.dataset.file === 'chelsea.png');
+    const catOthers = actors.filter(actor => actor !== cat);
+    const overlays = [...document.querySelectorAll('.story-search, .story-selection, .story-paths, .story-folder, .story-undo')];
+    gsap.set(actors, { left: 0, top: 0, width: size, transformOrigin: 'top left' });
+    actors.forEach(actor => gsap.set(actor, {
+      x: Number(actor.style.getPropertyValue('--x')) * width / 100,
+      y: 76 + Number(actor.style.getPropertyValue('--y')) * (height - 138) / 100,
+      scale: Number(actor.style.getPropertyValue('--w')) / size,
+      rotation: Number(actor.style.getPropertyValue('--r')),
+    }));
+    gsap.set([document.querySelector('#features'), ...panels, ...overlays], { autoAlpha: 0 });
+    gsap.set(pair.map(actor => actor.querySelector('i')), { autoAlpha: 0, scale: .5 });
+    const timeline = gsap.timeline({ id: 'image-journey', paused: true, defaults: { ease: 'power2.inOut' } });
+    timeline.addLabel('hero', 0).addLabel('library', 1.6).addLabel('search', 4.05).addLabel('return-library', 5.05)
+      .addLabel('selection', 6.45).addLabel('preview', 8.25).addLabel('recovery', 9.85).addLabel('applied', 11.35).addLabel('undone', 12.75);
+    timeline.to(hero, { autoAlpha: 0, y: -24, duration: .36 }, .52);
+    actors.forEach((actor, index) => timeline.to(actor, { ...grid(index), duration: .8 }, .5 + index * .025));
+    timeline.to(document.querySelector('#features'), { autoAlpha: 1, duration: .24 }, .78);
+    SCENE_STARTS.forEach((start, index) => {
+      if (index) timeline.to(panels[index - 1], { autoAlpha: 0, y: -12, duration: .2 }, start - .2);
+      timeline.fromTo(panels[index], { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: .26 }, start - .1);
+    });
+    timeline.to('[data-story-search]', { autoAlpha: 1, duration: .3 }, 2.8);
+    timeline.to(catOthers, { autoAlpha: 0, scale: scale * .9, duration: .6 }, 3.1);
+    timeline.to(cat, { x: width * .65, y: height * .49, scale: Math.min(width * .18 / size, 1.55), rotation: -3, duration: .7 }, 3.15);
+    // Restore the complete library before the human picks two unrelated images.
+    timeline.to('[data-story-search]', { autoAlpha: 0, duration: .25 }, 4.55);
+    actors.forEach((actor, index) => timeline.to(actor, { ...grid(index), duration: .48 }, 4.58));
+    timeline.to(pair.map(actor => actor.querySelector('i')), { autoAlpha: 1, scale: 1, stagger: .18, duration: .22 }, 5.35);
+    timeline.to(others, { autoAlpha: 0, duration: .5 }, 5.62);
+    pair.forEach((actor, index) => timeline.to(actor, { x: width * (.53 + index * .23), y: height * (.39 + index * .045), scale: Math.min(width * .195 / size, 1.65), rotation: index * 3, duration: .75 }, 5.6));
+    timeline.to('[data-story-selection]', { autoAlpha: 1, y: 0, duration: .35 }, 6.12);
+    timeline.to('[data-story-selection]', { autoAlpha: 0, duration: .25 }, 7.05);
+    timeline.to(pair.map(actor => actor.querySelector('i')), { autoAlpha: 0, duration: .2 }, 7.15);
+    pair.forEach((actor, index) => timeline.to(actor, { x: width * .1, y: height * .49 + 12 + index * 86, scale: .4, rotation: 0, duration: .65 }, 7.15));
+    timeline.fromTo('[data-story-paths]', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: .45 }, 7.6);
+    timeline.to('[data-story-paths]', { autoAlpha: 0, duration: .25 }, 8.9);
+    const recovery = index => ({ x: width * (.48 + index * .13), y: height * (.46 + index * .035), scale: .8, rotation: index * 4 });
+    pair.forEach((actor, index) => timeline.to(actor, { ...recovery(index), duration: .65 }, 9.02));
+    timeline.to('[data-story-folder]', { autoAlpha: 1, duration: .4 }, 9.1);
+    timeline.to(pair, { x: width * .835, y: height * .52, scale: .08, autoAlpha: 0, rotation: 0, stagger: .18, duration: .6, ease: 'power2.in' }, 10.3);
+    timeline.to('[data-story-folder]', { scale: 1.04, yoyo: true, repeat: 1, duration: .13 }, 11.02);
+    pair.forEach((actor, index) => timeline.to(actor, { ...recovery(index), autoAlpha: 1, duration: .6, ease: 'power2.out' }, 11.95 + index * .12));
+    timeline.fromTo('[data-story-undo]', { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: .3 }, 12.45);
+    timeline.to({}, { duration: .85 }, 12.75);
+    timeline.eventCallback('onUpdate', () => syncCinema(timeline.time()));
+    cinema = { timeline, scrollTrigger: null };
+    cinema.scrollTrigger = ScrollTrigger.create({
+      id: 'image-journey', trigger: journey, pin: journey.querySelector('.journey-pin'),
+      start: 'top top', end: () => `+=${Math.round(innerHeight * 5.5)}`,
+      animation: timeline, scrub: .55, anticipatePin: 1, invalidateOnRefresh: true,
+      onRefresh: self => syncCinema(self.animation.time()),
+    });
+    // Timeline-backed triggers defer their first measurement; routing needs it now.
+    cinema.scrollTrigger.refresh();
+    syncCinema(timeline.time());
+  }, journey);
+}
+function cinemaScrollTarget(index) {
+  if (!cinema) return null;
+  const { timeline, scrollTrigger } = cinema;
+  const time = timeline.labels[index < 0 ? 'hero' : CHAPTERS[index]];
+  return scrollTrigger.start + time / timeline.duration() * (scrollTrigger.end - scrollTrigger.start);
+}
+function cinemaGoTo(index, animated = true, complete) {
+  const top = cinemaScrollTarget(index);
+  if (top !== null) scrollToPosition(top, animated, () => {
+    cinema?.scrollTrigger.getTween()?.progress(1);
+    if (cinema) syncCinema(cinema.timeline.time());
+    complete?.();
   });
-
-  /* Scene 1: the library settles into place. */
-  timeline.to(libraryCards, { y: 0, autoAlpha: 1, duration: .5, stagger: .032, ease: 'power2.out' }, .06);
-
-  /* 1 -> 2 */
-  timeline.to(panels[0], { autoAlpha: 0, y: -14, duration: .2 }, 1.02)
-    .fromTo(panels[1], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .28 }, 1.1);
-  /* Scene 2: the recorded query types itself, the cat surfaces. */
-  const typed = { p: 0 };
-  timeline.to(typed, { p: 1, duration: .4, onUpdate: () => { queryInput.value = SAMPLE_QUERY.slice(0, Math.round(typed.p * SAMPLE_QUERY.length)); } }, 1.16);
-  timeline.to(hitBadge, { autoAlpha: 1, y: 0, duration: .18 }, 1.6)
-    .to(chelseaCard, { scale: 1.05, duration: .18 }, 1.6)
-    .to(dimmedCards, { opacity: .48, duration: .18 }, 1.64);
-
-  /* 2 -> 3 */
-  timeline.to(panels[1], { autoAlpha: 0, y: -14, duration: .2 }, 2.02)
-    .fromTo(panels[2], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .28 }, 2.1);
-  /* Scene 3: the operator picks the astronaut and the rocket. */
-  timeline.to(recordedChecks, { scale: 1, autoAlpha: 1, duration: .16, stagger: .12, ease: 'back.out(2)' }, 2.16);
-  timeline.to(selectedCount, { n: 2, duration: .18, snap: { n: 1 }, onUpdate: () => { counter.textContent = `已選 ${selectedCount.n} 張`; } }, 2.2);
-
-  /* 3 -> 4 */
-  timeline.to(panels[2], { autoAlpha: 0, y: -14, duration: .2 }, 3.02)
-    .fromTo(panels[3], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .28 }, 3.1);
-  /* Scene 4: per-file preview. */
-  timeline.fromTo(planRows, { x: -26, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .26, stagger: .09, ease: 'power2.out' }, 3.16);
-
-  /* 4 -> 5 */
-  timeline.to(panels[3], { autoAlpha: 0, y: -14, duration: .2 }, 4.02)
-    .fromTo(panels[4], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .28 }, 4.1);
-  /* Scene 5: apply, then undo. */
-  const flyCards = [...flyGrid.querySelectorAll('.lab-card')];
-  timeline.to(flyCards, {
-    x: index => {
-      const card = flyCards[index].getBoundingClientRect();
-      const target = folder.getBoundingClientRect();
-      return target.left + target.width / 2 - (card.left + card.width / 2);
-    },
-    y: index => {
-      const card = flyCards[index].getBoundingClientRect();
-      const target = folder.getBoundingClientRect();
-      return target.top + target.height / 2 - (card.top + card.height / 2);
-    },
-    scale: .12,
-    autoAlpha: .12,
-    duration: .22,
-    stagger: .05,
-    ease: 'power2.in',
-  }, 4.18);
-  timeline.to(folder, { scale: 1.07, duration: .08, yoyo: true, repeat: 1 }, 4.36);
-  timeline.to(movedCount, { n: 2, duration: .06, snap: { n: 1 }, onUpdate: () => { folderCount.textContent = String(movedCount.n); } }, 4.38);
-  timeline.to(flyCards, { x: 0, y: 0, scale: 1, autoAlpha: 1, duration: .2, stagger: .05, ease: 'power2.out' }, 4.62);
-  timeline.to(movedCount, { n: 0, duration: .06, snap: { n: 1 }, onUpdate: () => { folderCount.textContent = String(movedCount.n); } }, 4.66);
-  timeline.fromTo(record, { autoAlpha: 0, x: -12 }, {
-    autoAlpha: 1, x: 0, duration: .1,
-    onUpdate: () => { recordCount.textContent = '2'; },
-  }, 4.88);
-
-  cinema = { timeline, scrollTrigger: timeline.scrollTrigger };
-  cinemaIndex = -1;
-  applyRail(0, GUIDES_CINEMA);
-
-  /* Deep links: scroll the pinned stage to the requested scene once measured. */
-  const resolve = () => resolveHashCinema();
-  ScrollTrigger.addEventListener('refresh', resolve, { once: true });
-  resolve();
-  return () => {
-    ScrollTrigger.removeEventListener('refresh', resolve);
-    timeline.scrollTrigger?.kill();
-    timeline.kill();
-    cinema = null;
-    cinemaIndex = -1;
-    gsap.set([labFrame, ...panels, ...panels.map(panel => [...panel.querySelectorAll('.lab-card, .lab-check, .lab-hit, .lab-plan li, .lab-record, .lab-folder')]).flat()], { clearProps: 'all' });
-    labFrame.classList.remove('lab-ready', 'lab-cinema');
-    autoButton.hidden = false;
-    record.hidden = true;
-    panels.forEach(panel => { panel.inert = false; panel.classList.remove('is-active'); });
-  };
 }
+function scrollToPosition(top, animated = true, complete) {
+  scrollTween?.kill();
+  top = Math.max(0, Math.min(top, document.documentElement.scrollHeight - innerHeight));
+  if (!animated || motion === 'paused' || !hasGsap) {
+    window.scrollTo({ top, behavior: 'instant' });
+    if (hasGsap) ScrollTrigger.update();
+    complete?.();
+    return;
+  }
+  const position = { y: scrollY };
+  scrollTween = gsap.to(position, { y: top, duration: .65, ease: 'power2.inOut', onUpdate: () => window.scrollTo({ top: position.y, behavior: 'instant' }), onComplete: complete });
+}
+let initialRoutePending = true;
+for (const event of ['wheel', 'touchstart', 'pointerdown', 'keydown']) window.addEventListener(event, () => {
+  initialRoutePending = false;
+  scrollTween?.kill();
+}, { passive: true, capture: true });
 
-/* ================= Hash routing ================= */
-function panelIndexFromHash() {
-  if (!location.hash) return -1;
+/* Routing uses timeline labels, never equal-sized scroll slices. */
+function pushHash(hash) { if (location.hash !== hash) history.pushState(null, '', hash || `${location.pathname}${location.search}`); }
+function panelIndexFromHash(hash = location.hash) {
   let id;
-  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return -1; }
-  const target = document.getElementById(id);
-  if (!target) return -2; /* unknown hash: ignore */
-  const panel = target.closest('.lab-panel');
-  const index = panels.indexOf(panel);
-  return index;
+  try { id = decodeURIComponent(hash.slice(1)); } catch { return -1; }
+  if (id === 'features') return 0;
+  const panel = document.getElementById(id)?.closest('.lab-panel');
+  return panels.indexOf(panel);
 }
-
-function resolveHashCinema() {
-  if (mode !== 'cinema' || !cinema) return;
-  const index = panelIndexFromHash();
+function navigate(hash, animated = false, moveFocus = false) {
+  const focus = target => {
+    if (!moveFocus) return;
+    const heading = target.querySelector('h1, h2, h3') || target.closest('section')?.querySelector('h2, h3') || target;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  };
+  const index = panelIndexFromHash(hash);
   if (index >= 0) {
-    const top = cinemaScrollTarget(index);
-    if (top !== null) {
-      cinemaIndex = -1;
-      window.scrollTo({ top, behavior: 'instant' });
+    if (mode === 'cinema') cinemaGoTo(index, animated, () => focus(panels[index]));
+    else if (mode === 'interactive') { selectStep(index, animated); alignLab(animated); focus(panels[index]); }
+    else {
+      applyRail(index);
+      scrollToPosition(scrollY + panels[index].getBoundingClientRect().top - document.querySelector('.site-header').offsetHeight - 28, animated, () => focus(panels[index]));
     }
+    return;
   }
+  let id;
+  try { id = decodeURIComponent(hash.slice(1)); } catch { return; }
+  const target = id ? document.getElementById(id) : hero;
+  if (!target) return;
+  const top = !id || id === 'main' ? 0 : scrollY + target.getBoundingClientRect().top - document.querySelector('.site-header').offsetHeight - 20;
+  scrollToPosition(top, animated, () => focus(target));
 }
+for (const link of document.querySelectorAll('a[href^="#"]')) {
+  link.addEventListener('click', event => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    stopAutoplay(true);
+    const hash = link.getAttribute('href');
+    pushHash(hash === '#' ? '' : hash);
+    navigate(hash, true, !stepList.contains(link) && !link.classList.contains('skip-link'));
+    if (link.classList.contains('skip-link')) {
+      const main = document.querySelector('main');
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+    }
+  });
+}
+steps.forEach((step, index) => step.addEventListener('keydown', event => {
+  let next;
+  if (event.key === 'ArrowRight') next = (index + 1) % steps.length;
+  else if (event.key === 'ArrowLeft') next = (index + steps.length - 1) % steps.length;
+  else if (event.key === 'Home') next = 0;
+  else if (event.key === 'End') next = steps.length - 1;
+  else return;
+  event.preventDefault();
+  stopAutoplay(true);
+  steps[next].focus({ preventScroll: true });
+  pushHash(`#${panels[next].id}`);
+  navigate(location.hash, true);
+}));
+let routeFrame = 0;
+for (const event of ['hashchange', 'popstate']) window.addEventListener(event, () => {
+  cancelAnimationFrame(routeFrame);
+  routeFrame = requestAnimationFrame(() => { stopAutoplay(true); navigate(location.hash); });
+});
 
-function resolveHashInteractive() {
-  const index = panelIndexFromHash();
-  if (index === -1) { selectStep(0); return; }
-  if (index >= 0) {
-    selectStep(index, true);
-    alignLab();
+/* Responsive rebuilds release pins and styles, not the manual form state. */
+function fitsCinema() {
+  if (!hasGsap || motion !== 'full' || innerWidth < 900 || innerHeight < 700) return false;
+  journey.classList.add('journey-cinema');
+  const header = document.querySelector('.site-header').offsetHeight;
+  const fits = hero.querySelector('.hero-copy').scrollHeight + header + 100 < innerHeight
+    && Math.max(...panels.map(panel => panel.querySelector('.lab-copy').scrollHeight)) < innerHeight - header - 260
+    && stepList.scrollHeight < 100;
+  journey.classList.remove('journey-cinema');
+  return fits;
+}
+let layoutSignature = '';
+function getLayoutSignature() { return `${innerWidth}:${innerHeight}:${getComputedStyle(root).fontSize}:${document.querySelector('.site-header').offsetHeight}`; }
+function visibleChapter() {
+  const top = document.querySelector('.site-header').offsetHeight + 40;
+  return panels.findIndex(panel => {
+    const bounds = panel.getBoundingClientRect();
+    return bounds.bottom > top && bounds.top < innerHeight;
+  });
+}
+function activateLabMode(restore = true) {
+  const previous = mode === 'story' ? visibleChapter() : activeIndex;
+  const oldMode = mode;
+  const inJourney = cinema ? scrollY <= cinema.scrollTrigger.end + 2 : journey.getBoundingClientRect().bottom > 0;
+  const wasBelow = !inJourney;
+  const evidenceTop = document.querySelector('#demo').getBoundingClientRect().top;
+  scrollTween?.kill();
+  stopAutoplay(true);
+  cancelPanelAnimations();
+  if (hasGsap) { gsap.killTweensOf(field); gsap.set(field, { x: 0, y: 0 }); }
+  cinemaContext?.revert();
+  if (hasGsap) {
+    // Firefox may retain fromTo start styles after context.revert().
+    gsap.set([hero, document.querySelector('#features'), ...panels, ...actors,
+      ...document.querySelectorAll('.photo-print i, .story-search, .story-selection, .story-paths, .story-folder, .story-undo')],
+    { clearProps: 'transform,transformOrigin,opacity,visibility,left,top,width' });
   }
+  cinemaContext = null;
+  cinema = null;
+  journey.classList.remove('journey-cinema');
+  lab.classList.remove('lab-cinema', 'lab-manual', 'lab-story');
+  hero.inert = false;
+  hero.removeAttribute('aria-hidden');
+  document.querySelector('#features').inert = false;
+  document.querySelector('#features').removeAttribute('aria-hidden');
+  if (!manualRequested && fitsCinema()) buildCinema();
+  else {
+    mode = manualRequested ? 'interactive' : 'story';
+    lab.classList.add(manualRequested ? 'lab-manual' : 'lab-story');
+    if (manualRequested) selectStep(state.step);
+    else applyRail(previous);
+    journey.dataset.scene = scrollY < hero.offsetHeight - 100 ? 'hero' : CHAPTERS[Math.max(0, previous)];
+  }
+  journey.dataset.view = mode;
+  modeButton.textContent = manualRequested ? '返回捲動故事 ↗' : '自己試一次 ↗';
+  modeButton.setAttribute('aria-pressed', String(manualRequested));
+  autoButton.hidden = mode !== 'interactive';
+  autoButton.disabled = motion === 'paused';
+  lab.querySelector('[data-skip-story]').hidden = mode !== 'cinema';
+  document.querySelector('.story-outro').hidden = mode !== 'story';
+  resetButton.textContent = mode === 'cinema' ? '從頭看' : '重新體驗';
+  selectGrid.querySelectorAll('.lab-card').forEach(card => {
+    card.setAttribute('role', 'checkbox');
+    card.tabIndex = 0;
+  });
+  renderFly();
+  if (restore) {
+    if (wasBelow) scrollToPosition(scrollY + document.querySelector('#demo').getBoundingClientRect().top - evidenceTop, false);
+    else if (previous >= 0 && (oldMode === 'cinema' || mode === 'cinema' || manualRequested)) navigate(`#${panels[manualRequested ? state.step : previous].id}`);
+  }
+  layoutSignature = getLayoutSignature();
+  positionIndicator();
 }
-
-/* ================= Mode selection ================= */
-function buildInteractive() {
-  mode = 'interactive';
-  labFrame.classList.add('lab-ready');
-  autoButton.hidden = false;
-  applyRecordedState();
-  selectStep(0);
-  resolveHashInteractive();
-  requestAnimationFrame(positionIndicator);
-}
-
-const CINEMA_QUERY = '(min-width: 900px) and (min-height: 700px)';
-let labTeardown = null;
-
-function activateLabMode() {
-  if (labTeardown) { labTeardown(); labTeardown = null; }
-  if (window.matchMedia(CINEMA_QUERY).matches && hasGsap) labTeardown = buildCinema();
-  else buildInteractive();
-  /* After any mode switch the pinned/unpinned layout settles; re-measure the rail. */
-  requestAnimationFrame(positionIndicator);
-}
-
-activateLabMode();
-let modeQuery = window.matchMedia(CINEMA_QUERY);
-modeQuery.addEventListener?.('change', activateLabMode);
-window.addEventListener('orientationchange', activateLabMode);
-
-window.addEventListener('hashchange', () => {
-  if (mode === 'cinema') resolveHashCinema();
-  else resolveHashInteractive();
+modeButton.hidden = false;
+modeButton.addEventListener('click', () => {
+  manualRequested = !manualRequested;
+  if (manualRequested && !manualVisited) { state.step = Math.max(0, activeIndex); manualVisited = true; }
+  activateLabMode();
+  if (manualRequested) alignLab();
 });
-window.addEventListener('popstate', () => {
-  if (mode === 'cinema') resolveHashCinema();
-  else resolveHashInteractive();
+document.querySelector('[data-manual-start]').addEventListener('click', () => {
+  modeButton.click();
+  steps[state.step].focus({ preventScroll: true });
 });
-window.addEventListener('resize', positionIndicator);
-if (typeof window.ResizeObserver === 'function') {
-  const resizeObserver = new ResizeObserver(positionIndicator);
-  resizeObserver.observe(stepList);
+function updateMotionControl() {
+  root.dataset.motion = motion;
+  motionButton.setAttribute('aria-pressed', String(motion === 'full'));
+  const label = motion === 'full' ? '暫停動畫' : '播放動畫';
+  motionButton.setAttribute('aria-label', label);
+  motionButton.querySelector('[data-motion-label]').textContent = label;
 }
+motionButton.hidden = false;
+updateMotionControl();
+motionButton.addEventListener('click', () => {
+  motion = motion === 'full' ? 'paused' : 'full';
+  try { localStorage.setItem('pixora.site.motion', motion); } catch { /* In-memory pause still works. */ }
+  updateMotionControl();
+  if (motion === 'paused') document.querySelectorAll('[data-reveal]').forEach(element => element.classList.add('revealed'));
+  activateLabMode();
+});
+let resizeTimer = 0;
+function scheduleLayout() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (layoutSignature !== getLayoutSignature()) activateLabMode(); }, 140);
+}
+window.addEventListener('resize', scheduleLayout);
+window.addEventListener('orientationchange', scheduleLayout);
+if (typeof ResizeObserver === 'function') {
+  const observer = new ResizeObserver(() => {
+    positionIndicator();
+    scheduleLayout();
+    if (mode === 'cinema' && panels.some(panel => panel.querySelector('.lab-copy').scrollHeight > innerHeight - 336)) {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => activateLabMode(), 140);
+    }
+  });
+  observer.observe(root);
+  observer.observe(stepList);
+  observer.observe(hero.querySelector('.hero-copy'));
+  panels.forEach(panel => observer.observe(panel.querySelector('.lab-copy')));
+}
+
+panels[1].querySelector('.lab-run').addEventListener('click', () => { stopAutoplay(true); runSearch(); });
+panels[1].querySelector('.lab-fill').addEventListener('click', () => { stopAutoplay(true); queryInput.value = SAMPLE_QUERY; queryInput.focus(); });
+queryInput.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); stopAutoplay(true); runSearch(); } });
+queryInput.addEventListener('input', () => stopAutoplay(true));
+selectGrid.addEventListener('click', event => {
+  const card = event.target.closest('.lab-card');
+  if (card && mode === 'interactive') { stopAutoplay(true); toggleCard(card); }
+});
+selectGrid.addEventListener('keydown', event => {
+  const card = event.target.closest('.lab-card');
+  if (card && mode === 'interactive' && [' ', 'Enter'].includes(event.key)) { event.preventDefault(); stopAutoplay(true); toggleCard(card); }
+});
+nameInput.addEventListener('input', () => { stopAutoplay(true); invalidatePlan(); });
+acceptButton.addEventListener('click', () => { stopAutoplay(true); confirmSelection(); });
+applyButton.addEventListener('click', () => { stopAutoplay(true); flyIntoFolder(); });
+undoButton.addEventListener('click', () => { stopAutoplay(true); flyBack(); });
+resetButton.addEventListener('click', () => {
+  stopAutoplay(true);
+  if (mode === 'cinema') { pushHash(''); cinemaGoTo(-1, true, () => hero.querySelector('a').focus({ preventScroll: true })); }
+  else { resetLab(); pushHash('#feature-library'); alignLab(); }
+});
+autoButton.addEventListener('click', autoplay);
+lab.addEventListener('pointerdown', event => { if (state.autoplay && !autoButton.contains(event.target)) stopAutoplay(true); });
+lab.addEventListener('keydown', event => { if (state.autoplay && event.key === 'Escape') stopAutoplay(); });
+lab.querySelectorAll('[data-goto]').forEach(button => button.addEventListener('click', () => {
+  if (mode !== 'interactive') return;
+  stopAutoplay(true);
+  activateStep(Number(button.dataset.goto));
+}));
+
+/* Progressive enhancement: no loading gate, no OS motion-preference override. */
+function startReveals() {
+  const reveals = [...document.querySelectorAll('[data-reveal]')];
+  if (typeof IntersectionObserver !== 'function' || motion === 'paused') { reveals.forEach(element => element.classList.add('revealed')); return; }
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('revealed'); observer.unobserve(entry.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  reveals.forEach(element => observer.observe(element));
+  root.classList.add('motion-ready');
+}
+let heroVisible = true;
+if (typeof IntersectionObserver === 'function') {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.target === hero) heroVisible = entry.isIntersecting;
+      if (mode !== 'cinema' && entry.target === hero) journey.dataset.scene = entry.isIntersecting ? 'hero' : CHAPTERS[Math.max(0, activeIndex)];
+    });
+    if (mode === 'story') applyRail(visibleChapter());
+  }, { threshold: .25 });
+  observer.observe(hero);
+  panels.forEach(panel => observer.observe(panel));
+}
+if (hasGsap && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  journey.addEventListener('pointermove', event => {
+    if (motion !== 'full' || document.hidden || !heroVisible || journey.dataset.scene !== 'hero') return;
+    gsap.to(field, { x: (event.clientX / innerWidth - .5) * -10, y: (event.clientY / innerHeight - .5) * -8, duration: .75, ease: 'power2.out', overwrite: true });
+  });
+  journey.addEventListener('pointerleave', () => {
+    if (motion === 'full' && !document.hidden) gsap.to(field, { x: 0, y: 0, duration: .75, ease: 'power2.out', overwrite: true });
+  });
+}
+window.addEventListener('scroll', () => {
+  if (!state.autoplay) return;
+  const bounds = lab.getBoundingClientRect();
+  if (bounds.bottom <= document.querySelector('.site-header').offsetHeight || bounds.top >= innerHeight) stopAutoplay(true);
+}, { passive: true });
+document.addEventListener('visibilitychange', () => {
+  root.classList.toggle('page-hidden', document.hidden);
+  if (document.hidden) {
+    stopAutoplay(true);
+    cancelPanelAnimations();
+    renderFly();
+    scrollTween?.kill();
+    if (hasGsap) { gsap.killTweensOf(field); gsap.set(field, { x: 0, y: 0 }); }
+  }
+});
+
+const lightbox = document.querySelector('#lightbox');
+let imageOpener;
+if (typeof lightbox.showModal === 'function') {
+  document.querySelectorAll('[data-lightbox]').forEach(link => link.addEventListener('click', event => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    imageOpener = link;
+    const caption = link.querySelector('img').alt;
+    lightbox.querySelector('img').src = link.href;
+    lightbox.querySelector('img').alt = caption;
+    document.querySelector('#lightbox-caption').textContent = caption;
+    lightbox.showModal();
+  }));
+  lightbox.querySelector('[data-close]').addEventListener('click', () => lightbox.close());
+  lightbox.addEventListener('close', () => imageOpener?.focus({ preventScroll: true }));
+}
+
+syncSelection();
+renderPlan();
+renderFly();
+activateLabMode(false);
+startReveals();
+if (!location.hash && motion === 'full') actors.forEach((actor, index) => {
+  animate(actor.querySelector('.photo-print'), [{ opacity: 0, transform: 'translateY(22px) scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 650, delay: index * 16 });
+});
+requestAnimationFrame(() => navigate(location.hash));
+// WebKit can restore the pre-reload scroll position after the first route frame.
+window.addEventListener('pageshow', event => {
+  if (event.persisted) return;
+  requestAnimationFrame(() => {
+    if (initialRoutePending && location.hash) navigate(location.hash);
+    initialRoutePending = false;
+  });
+});
+Promise.allSettled(actors.map(actor => actor.querySelector('img').decode?.())).then(() => cinema?.scrollTrigger.refresh());
